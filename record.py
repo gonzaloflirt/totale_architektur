@@ -2,6 +2,9 @@
 
 import configparser, datetime, os, pyaudio, sys, threading, termios, wave
 from pydub import AudioSegment
+from pythonosc import dispatcher, osc_server
+
+recording = False
 
 def printDevices():
     audio = pyaudio.PyAudio()
@@ -30,6 +33,7 @@ def record(einheit):
         input_device_index = deviceIndex)
 
     frames = AudioSegment.empty()
+    global recording
     while recording:
         frames += AudioSegment(
             stream.read(frameSize), sample_width=2, frame_rate = sampleRate, channels=1)
@@ -50,6 +54,21 @@ def record(einheit):
         frames.export(os.path.join(dataDir, filename) + '.wav', format = 'wav')
         print("wrote", filename, 'duration:', frames.duration_seconds, 'seconds')
 
+def startRecording(key):
+    global recording
+    recording = True
+    threading.Thread(target=record, args=(key)).start()
+
+def stopRecording():
+    global recording
+    recording = False
+
+def OSCrecordHandler(addr, args, key):
+    startRecording(["{}".format(key)])
+
+def OSCstopHandler(addr):
+    stopRecording()
+
 def waitForKeypress():
     fd = sys.stdin.fileno()
     oldterm = termios.tcgetattr(fd)
@@ -67,13 +86,21 @@ def waitForKeypress():
 config = configparser.ConfigParser()
 config.read('totale_architektur.config')
 printDevices()
-recording = False
+
+oscDispatcher = dispatcher.Dispatcher()
+oscDispatcher.map("/record", OSCrecordHandler, 'key')
+oscDispatcher.map("/stop", OSCstopHandler)
+oscPort = config.getint('recorder', 'oscPort')
+oscServer = osc_server.ThreadingOSCUDPServer(('127.0.0.1', oscPort), oscDispatcher)
+print("OSC: {}".format(oscServer.server_address))
+threading.Thread(target=oscServer.serve_forever).start()
+
 while True:
     key = waitForKeypress()
     if key in '0123456789' and not recording:
-        recording = True
-        threading.Thread(target=record, args=(key)).start()
+        startRecording(key)
     else:
-        recording = False
+        stopRecording()
         if key == 'q':
+            oscServer.shutdown()
             break
