@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
-import ast, argparse, configparser, io, os
+import ast, argparse, configparser, datetime, io, os
 from pydub import AudioSegment
 from pydub import effects
+from random import randint
 from database import *
 
 def allClips():
@@ -29,16 +30,36 @@ def createClipFromRecording(fileName):
     frames = effects.compress_dynamic_range(
         frames, threshold = treshold, ratio = ratio, attack = attack, release = release)
     frames = effects.normalize(frames)
-    frames.export(os.path.join(clipsDir, fileName), format = 'wav')
-    print("new clip: ", fileName)
+    clipName = os.path.join(clipsDir, fileName)
+    frames.export(clipName, format = 'wav')
+    print('new clip:', clipName)
+    return clipName
 
-def createClipsFromNewRecordings():
-    [createClipFromRecording(recording) for recording in newRecordings()]
+def sumClips(einheit, clipNames):
+    files = [AudioSegment.from_wav(os.path.join(clipsDir, clipName))
+            for clipName in clipNames]
+    duration = max([len(file) for file in files])
+    result = AudioSegment.silent(duration = duration)
+    for file in files:
+        result = result.overlay(file, position = randint(0, duration - len(file)))
+    result = effects.normalize(result)
+    sumName = os.path.join(sumsDir,
+        str(einheit) + '_' + datetime.datetime.now().isoformat())
+    result.export(sumName, format = 'wav')
+    print('new sum:', sumName)
+    return sumName
 
 def updateDatabase():
-    for i in range(0, config.getint('vereinheiter', 'numEinheiten')):
-        paths = [os.path.join(clipsDir, file) for file in clipsForEinheit(i)]
-        database.write(i, paths)
+    for recording in newRecordings():
+        clip = createClipFromRecording(recording)
+        clipEinheit = os.path.basename(clip).split('_')[0]
+        einheit = database.read(clipEinheit)
+        if len(einheit) >= config.getint('vereinheiter', 'numSpeakers'):
+            sum = sumClips(clipEinheit, einheit)
+            database.write(clipEinheit, [sum, clip])
+        else:
+            einheit.append(clip)
+            database.write(clipEinheit, einheit)
 
 config = configparser.ConfigParser()
 config.read('totale_architektur.config')
@@ -48,8 +69,10 @@ if not os.path.exists(recordingsDir):
 clipsDir = os.path.realpath(config.get('vereinheiter', 'clipsDir'))
 if not os.path.exists(clipsDir):
     os.makedirs(clipsDir)
+sumsDir = os.path.realpath(config.get('vereinheiter', 'sumsDir'))
+if not os.path.exists(sumsDir):
+    os.makedirs(sumsDir)
 
-createClipsFromNewRecordings()
 updateDatabase()
 
 
