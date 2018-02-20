@@ -14,13 +14,13 @@ class database:
 
     @staticmethod
     def write(einheit, paths):
-        if len(paths) > 0:
-            daten = '[\'' + '\' , \''.join(path for path in paths) + '\']'
-        else:
-            daten = '[]'
         db = database.connect()
-        db.execute("INSERT OR REPLACE INTO einheiten (einheit, daten) VALUES (?, ?)",
-            [str(einheit), daten])
+        if len(paths) > 0:
+            daten = ','.join(path for path in paths)
+            db.execute("INSERT OR REPLACE INTO einheiten (einheit, daten) VALUES (?, ?)",
+                [str(einheit), daten])
+        else:
+            db.execute("DELETE FROM einheiten WHERE einheit=?", [einheit])
         db.commit()
         db.close()
 
@@ -31,6 +31,6 @@ class database:
         daten = entry.fetchone()
         db.close()
         if daten is None:
-            return '[]'
+            return []
         else:
-            return daten[0]
+            return daten[0].split(',')
