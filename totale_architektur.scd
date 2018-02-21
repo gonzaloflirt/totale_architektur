@@ -36,6 +36,7 @@ e.playEinheit = {{
 	var channel = round(Array.interpolation(buffers.size(), 0, e.numSpeakers - 1));
 	var iphase = Array.interpolation(buffers.size(), 0, 2 - (2 / buffers.size())) + rrand(0, 2);
 	var panSpeed = maxDuration.reciprocal;
+	if (buffers.size == 1, { channel = [rrand(0, e.numSpeakers - 1)]; });
 	buffers.scramble.collect({
 		|b, i|
 		var defer = rrand(0, maxDuration - b.duration());
@@ -81,7 +82,7 @@ s.waitForBoot{
 			wait(duration + 1);
 		}, {
 			postln("noop einheit " +  einheit);
-			1.wait;
+			0.01.wait;
 		});
 	}}).play;
 }
