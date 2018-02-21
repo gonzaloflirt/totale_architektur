@@ -6,6 +6,15 @@ from pydub import effects
 from random import randint
 from database import *
 
+def weekday():
+    return datetime.datetime.now().strftime("%A")
+
+def date():
+    return pastDate(0)
+
+def pastDate(days):
+    return (datetime.datetime.now() - datetime.timedelta(days)).strftime("%Y-%m-%d")
+
 def allClips():
     files =  [file for file in os.listdir(clipsDir)
         if (os.path.isfile(os.path.join(clipsDir, file)))]
@@ -41,10 +50,10 @@ def sumClips(einheit, clipNames):
     duration = max([len(file) for file in files])
     result = AudioSegment.silent(duration = duration)
     for file in files:
-        result = result.overlay(file, position = randint(0, duration - len(file)))
+        result = result.overlay(file - 9, position = randint(0, duration - len(file)))
     result = effects.normalize(result)
     sumName = os.path.join(sumsDir,
-        str(einheit) + '_' + datetime.datetime.now().isoformat())
+        str(einheit) + '_' + datetime.datetime.now().isoformat() + '.wav')
     result.export(sumName, format = 'wav')
     print('new sum:', sumName)
     return sumName
@@ -75,4 +84,5 @@ if not os.path.exists(sumsDir):
 
 updateDatabase()
 
+#print(date())
 
