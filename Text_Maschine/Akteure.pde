@@ -3,7 +3,6 @@ import java.util.*;
 
 
 class Einheit extends StringDict {
-  int count = 0;
 };
 
 class ApiEinheit {
@@ -101,6 +100,28 @@ class Akteure extends HashMap<String, Einheiten> {
     } else {
       return null;
     }
+  }
+  
+  String akteurName(ApiEinheit apiEinheit) {
+     Set<String> keys = this.keySet();
+     String name = "";
+     Iterator iter = keys.iterator();
+     while (iter.hasNext()) {
+       name = iter.next().toString();
+       Einheiten einheiten = this.get(name);
+       Set<Integer> einheitenKeys = einheiten.keySet();
+       Iterator einheitenIter = einheitenKeys.iterator();
+       while (einheitenIter.hasNext()) {
+         Integer id = (Integer)einheitenIter.next();
+         if (einheiten.containsKey(id)) {
+           Einheit einheit = einheiten.get(id);
+           if (einheit == apiEinheit.einheit) {
+             return name;
+           }
+         }
+       }
+     }
+    return "";
   }
   
   private StringList mLanguages;

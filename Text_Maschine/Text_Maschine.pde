@@ -1,4 +1,4 @@
-// DEBUGGING: Use LEFT arrow key or OSC messages to change Einheit
+// DEBUGGING: Use SPACE key to change Einheit
 
 import netP5.*;
 import oscP5.*;
@@ -6,9 +6,10 @@ import oscP5.*;
 OscP5 osc;
 int inPort = 6666;
 NetAddress receiver;
-int sendToPort = 7777;
+int sendToPort = 9000;
 String sendToAddress = "127.0.0.1";
-String oscIdPath = "/bauhaus/einheit/id";
+String oscStartRecordingPath = "/record";
+String oscStopRecordingPath = "/stop";
 String oscNamePath = "/bauhaus/name";
 String oscGetNamesPath = "/bauhaus/names/get";
 String oscNamesPath = "/bauhaus/names";
@@ -30,8 +31,7 @@ Akteure akteure;
 StringList names;
 StringList languages;
 
-String previousName = "";
-String currentName = "";
+ApiEinheit currentEinheit;
 
 void setup() {
   try {
@@ -42,11 +42,11 @@ void setup() {
   }
   languages = akteure.languages();
   names = akteure.names();
-  currentName = names.get(0);
   
   background(backgroundColor);
   fullScreen();
   noStroke();
+  noCursor();
   
   fontLang = createFont("Futura-Bold", 90);
   font = createFont("Futura", 90);
@@ -59,20 +59,27 @@ void setup() {
 }
 
 void draw() {
-  if (currentName != previousName) {
-    background(backgroundColor);
-    
+  background(backgroundColor);
+  if (isRecording) {
     drawLanguage();
-
-    ApiEinheit einheit = akteure.einheit(currentName);
-    drawEinheiten(einheit);
-    
-    previousName = currentName;
-    
-    OscMessage message = new OscMessage(oscIdPath);
-    message.add(einheit.id);
-    osc.send(message, receiver);
+    drawCurrentEinheit();
   }
+  else {
+    drawLandingPage();
+  }
+}
+
+void drawLandingPage() {
+  textFont(fontLang);
+  textSize(languageFontSize);
+  textAlign(CENTER, CENTER);
+  Feld feld0 = new Feld(hSpace, vSpace, langWidth, feldHeight);
+  fill(textColor0);
+  text("Wähle einen Akteur.", feld0.x, feld0.y, width - 2 * hSpace, feld0.height);
+  
+  Feld feld1 = new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight);
+  fill(textColor1);
+  text("Choose an Akteur.", feld1.x, feld1.y, feld1.width, feld1.height);
 }
 
 void drawLanguage() {
@@ -88,27 +95,28 @@ void drawLanguage() {
   text(languages.get(1), feld1.x, feld1.y, feld1.width, feld1.height);
 }
 
-void drawEinheiten(ApiEinheit einheit) {
+void drawCurrentEinheit() {
   textFont(font);
-    textSize(einheitenFontSize);
-    textAlign(LEFT, TOP);
-    Feld feld0 = new Feld(langWidth + 2 * hSpace, vSpace, textFeldWidth,  feldHeight);
-    fill(textColor1);
-    if (einheit != null) {
-      text(einheit.get(languages.get(0)), feld0.x, feld0.y, feld0.width, feld0.height);
-    }
+  textSize(einheitenFontSize);
+  textAlign(LEFT, TOP);
+  Feld feld0 = new Feld(langWidth + 2 * hSpace, vSpace, textFeldWidth,  feldHeight);
+  fill(textColor1);
+  if (currentEinheit != null) {
+    text(currentEinheit.get(languages.get(0)), feld0.x, feld0.y, feld0.width, feld0.height);
+  }
 
-    Feld feld1 = new Feld(langWidth + 2 * hSpace, (height / 2) + vSpace, textFeldWidth,  feldHeight);
-    fill(textColor0);
-    if (einheit != null) {
-      text(einheit.get(languages.get(1)), feld1.x, feld1.y, feld1.width, feld1.height);
-    }
+  Feld feld1 = new Feld(langWidth + 2 * hSpace, (height / 2) + vSpace, textFeldWidth,  feldHeight);
+  fill(textColor0);
+  if (currentEinheit != null) {
+    text(currentEinheit.get(languages.get(1)), feld1.x, feld1.y, feld1.width, feld1.height);
+  }
 }
 
 void oscEvent(OscMessage inMessage) {
   String pattern = inMessage.addrPattern();
   if (pattern.equals(oscNamePath)) {
-    currentName = inMessage.get(0).stringValue();
+    String name = inMessage.get(0).stringValue();
+    currentEinheit = akteure.einheit(name);
     println(inMessage.get(0).stringValue());
   }
   if (pattern.equals(oscGetNamesPath)) {
@@ -122,11 +130,33 @@ void oscEvent(OscMessage inMessage) {
   }
 }
 
+boolean isRecording = false;
 void keyPressed() {
-  if (key == CODED && keyCode == RIGHT) {
+  if (key == ' ' && !isRecording) {
     int index = 0;
-    while(currentName != names.get(index)) { ++index; }
+    if (currentEinheit == null) {
+      currentEinheit = akteure.einheit(names.get(0));
+    }
+    while(akteure.akteurName(currentEinheit) != names.get(index)) { ++index; }
     index = (index + 1) % names.size();
-    currentName = names.get(index);
+    String name = names.get(index);
+    if (!name.isEmpty()) {
+      ApiEinheit einheit = akteure.einheit(name);
+      if (einheit != null) {
+        currentEinheit = einheit;
+        OscMessage message = new OscMessage(oscStartRecordingPath);
+        message.add(currentEinheit.id);
+        osc.send(message, receiver);
+        isRecording = true;
+      }
+    }
+  }
+}
+
+void keyReleased() {
+  if (key == ' ') {
+    isRecording = false;
+    OscMessage message = new OscMessage(oscStopRecordingPath);
+    osc.send(message, receiver);
   }
 }
