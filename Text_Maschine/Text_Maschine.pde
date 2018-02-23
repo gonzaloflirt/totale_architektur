@@ -18,12 +18,12 @@ int hSpace = 10;
 int vSpace = 10;
 int textFeldWidth = 0;
 int feldHeight = 0;
-int langWidth = 200;
+int langWidth = 120;
 
 PFont fontLang;
 PFont font;
-int languageFontSize = 90;
-int einheitenFontSize = 50;
+int languageFontSize = 50;
+int einheitenFontSize = 35;
 int backgroundColor = 245;
 int textColor0 = 100;
 int textColor1 = 50;
