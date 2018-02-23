@@ -19,6 +19,9 @@ int vSpace = 10;
 int textFeldWidth = 0;
 int feldHeight = 0;
 int langWidth = 120;
+Feld[] introductionFelder;
+Feld[] languageFelder;
+Feld[] einheitenFelder;
 
 PFont fontLang;
 PFont font;
@@ -64,6 +67,10 @@ void setup() {
   textFeldWidth = width - langWidth - 3 * hSpace;
   feldHeight = (height / 2) - 2 * vSpace;
   
+  introductionFelder = new Feld[]{new Feld(hSpace, vSpace, width - 2 * hSpace,feldHeight), new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight)};
+  languageFelder = new Feld[]{new Feld(hSpace, vSpace, langWidth, feldHeight), new Feld(hSpace, (height / 2) + vSpace, langWidth, feldHeight)};
+  einheitenFelder = new Feld[]{new Feld(langWidth + 2 * hSpace, vSpace, textFeldWidth,  feldHeight), new Feld(langWidth + 2 * hSpace, (height / 2) + vSpace, textFeldWidth,  feldHeight)};
+  
   osc = new OscP5(this, inPort);
   receiver = new NetAddress(sendToAddress, sendToPort);
 }
@@ -83,42 +90,33 @@ void drawIntroduction() {
   textFont(fontLang);
   textSize(languageFontSize);
   textAlign(CENTER, CENTER);
-  Feld feld0 = new Feld(hSpace, vSpace, langWidth, feldHeight);
   fill(textColor0);
-  text(introduction.get(languages.get(0)), feld0.x, feld0.y, width - 2 * hSpace, feld0.height);
-  
-  Feld feld1 = new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight);
+  text(introduction.get(languages.get(0)), introductionFelder[0].x, introductionFelder[0].y, introductionFelder[0].width, introductionFelder[0].height);
   fill(textColor1);
-  text(introduction.get(languages.get(1)), feld1.x, feld1.y, feld1.width, feld1.height);
+  text(introduction.get(languages.get(1)), introductionFelder[1].x, introductionFelder[1].y, introductionFelder[1].width, introductionFelder[1].height);
 }
 
 void drawLanguage() {
   textFont(fontLang);
   textSize(languageFontSize);
   textAlign(LEFT, TOP);
-  Feld feld0 = new Feld(hSpace, vSpace, langWidth, feldHeight);
   fill(textColor0);
-  text(languages.get(0), feld0.x, feld0.y, feld0.width, feld0.height);
-  
-  Feld feld1 = new Feld(hSpace, (height / 2) + vSpace, langWidth, feldHeight);
+  text(languages.get(0), languageFelder[0].x, languageFelder[0].y, languageFelder[0].width, languageFelder[0].height);
   fill(textColor1);
-  text(languages.get(1), feld1.x, feld1.y, feld1.width, feld1.height);
+  text(languages.get(1), languageFelder[1].x, languageFelder[1].y, languageFelder[1].width, languageFelder[1].height);
 }
 
 void drawCurrentEinheit() {
   textFont(font);
   textSize(einheitenFontSize);
   textAlign(LEFT, TOP);
-  Feld feld0 = new Feld(langWidth + 2 * hSpace, vSpace, textFeldWidth,  feldHeight);
   fill(textColor1);
   if (currentEinheit != null) {
-    text(currentEinheit.get(languages.get(0)), feld0.x, feld0.y, feld0.width, feld0.height);
+    text(currentEinheit.get(languages.get(0)), einheitenFelder[0].x, einheitenFelder[0].y, einheitenFelder[0].width, einheitenFelder[0].height);
   }
-
-  Feld feld1 = new Feld(langWidth + 2 * hSpace, (height / 2) + vSpace, textFeldWidth,  feldHeight);
   fill(textColor0);
   if (currentEinheit != null) {
-    text(currentEinheit.get(languages.get(1)), feld1.x, feld1.y, feld1.width, feld1.height);
+    text(currentEinheit.get(languages.get(1)), einheitenFelder[1].x, einheitenFelder[1].y, einheitenFelder[1].width, einheitenFelder[1].height);
   }
 }
 
