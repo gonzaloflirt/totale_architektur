@@ -27,6 +27,8 @@ int einheitenFontSize = 35;
 int backgroundColor = 245;
 int textColor0 = 100;
 int textColor1 = 50;
+
+Introduction introduction;
 Akteure akteure;
 StringList names;
 StringList languages;
@@ -37,11 +39,17 @@ boolean isRecording = false;
 
 void setup() {
   try {
+    introduction = new Introduction(sketchPath() + "/data/");
     akteure = new Akteure(sketchPath() + "/Einheiten/");
   } catch(Exception e) {
     println("Error reading txt files: " + e.getMessage());
     exit();
   }
+  if (!areLanguagesCorrect(introduction.languages(), akteure.languages())) {
+    println("Error! Einheiten and Introduction have not the same languages.");
+    exit();
+  }
+  
   languages = akteure.languages();
   names = akteure.names();
   
@@ -67,21 +75,21 @@ void draw() {
     drawCurrentEinheit();
   }
   else {
-    drawLandingPage();
+    drawIntroduction();
   }
 }
 
-void drawLandingPage() {
+void drawIntroduction() {
   textFont(fontLang);
   textSize(languageFontSize);
   textAlign(CENTER, CENTER);
   Feld feld0 = new Feld(hSpace, vSpace, langWidth, feldHeight);
   fill(textColor0);
-  text("Wähle einen Akteur.", feld0.x, feld0.y, width - 2 * hSpace, feld0.height);
+  text(introduction.get(languages.get(0)), feld0.x, feld0.y, width - 2 * hSpace, feld0.height);
   
   Feld feld1 = new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight);
   fill(textColor1);
-  text("Choose an Akteur.", feld1.x, feld1.y, feld1.width, feld1.height);
+  text(introduction.get(languages.get(1)), feld1.x, feld1.y, feld1.width, feld1.height);
 }
 
 void drawLanguage() {
@@ -130,6 +138,18 @@ void oscEvent(OscMessage inMessage) {
     }
     osc.send(outMessage, receiver);
   }
+}
+
+boolean areLanguagesCorrect(StringList lhs, StringList rhs) {
+  boolean areCorrect = false;
+  if (lhs.size() == rhs.size() && lhs.size() == 2) {
+    for (int i = 0; i < introduction.languages().size(); ++i) {
+      if (lhs.get(i).equals(rhs.get(i))) {
+        areCorrect = true;
+      }
+    }
+  }
+  return areCorrect;
 }
 
 void keyPressed() {
