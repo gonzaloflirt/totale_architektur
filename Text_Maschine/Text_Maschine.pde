@@ -33,6 +33,8 @@ StringList languages;
 
 ApiEinheit currentEinheit;
 
+boolean isRecording = false;
+
 void setup() {
   try {
     akteure = new Akteure(sketchPath() + "/Einheiten/");
@@ -130,7 +132,6 @@ void oscEvent(OscMessage inMessage) {
   }
 }
 
-boolean isRecording = false;
 void keyPressed() {
   if (key == ' ' && !isRecording) {
     int index = 0;
