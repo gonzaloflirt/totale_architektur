@@ -12,9 +12,6 @@ int sendToPort = 9000;
 String sendToAddress = "127.0.0.1";
 String oscStartRecordingPath = "/record";
 String oscStopRecordingPath = "/stop";
-String oscNamePath = "/bauhaus/name";
-String oscGetNamesPath = "/bauhaus/names/get";
-String oscNamesPath = "/bauhaus/names";
 
 int hSpace = 10;
 int vSpace = 10;
@@ -33,32 +30,26 @@ int backgroundColor = 245;
 int textColor0 = 100;
 int textColor1 = 50;
 
-Introduction introduction;
-Akteure akteure;
+StringDict introduction;
+Einheit[] einheiten;
 StringList names;
-StringList languages;
+String[] languages;
 
-ApiEinheit currentEinheit;
+Einheit currentEinheit;
 
 boolean isRecording = false;
 boolean hasStateChanged = true;
 
 void setup() {
   String dataPath = sketchPath() + "/texte/";
+  languages = new String[]{"DE", "EN"};
   try {
-    introduction = new Introduction(dataPath);
-    akteure = new Akteure(dataPath);
+    introduction = getIntroduction(dataPath, languages);
+    einheiten = getEinheiten(dataPath, languages);
   } catch(Exception e) {
-    println("Error reading txt files: " + e.getMessage());
+    println("Error reading Einheiten files: " + e.getMessage());
     exit();
   }
-  if (!areLanguagesCorrect(introduction.languages(), akteure.languages())) {
-    println("Error! Einheiten and Introduction have not the same languages.");
-    exit();
-  }
-  
-  languages = akteure.languages();
-  names = akteure.names();
   
   background(backgroundColor);
   fullScreen();
@@ -105,9 +96,9 @@ void drawIntroduction() {
   textSize(languageFontSize);
   textAlign(CENTER, CENTER);
   fill(textColor0);
-  text(introduction.get(languages.get(0)), introductionFelder[0].x, introductionFelder[0].y, introductionFelder[0].width, introductionFelder[0].height);
+  text(introduction.get(languages[0]), introductionFelder[0].x, introductionFelder[0].y, introductionFelder[0].width, introductionFelder[0].height);
   fill(textColor1);
-  text(introduction.get(languages.get(1)), introductionFelder[1].x, introductionFelder[1].y, introductionFelder[1].width, introductionFelder[1].height);
+  text(introduction.get(languages[1]), introductionFelder[1].x, introductionFelder[1].y, introductionFelder[1].width, introductionFelder[1].height);
 }
 
 void drawLanguage() {
@@ -115,9 +106,9 @@ void drawLanguage() {
   textSize(languageFontSize);
   textAlign(LEFT, TOP);
   fill(textColor0);
-  text(languages.get(0), languageFelder[0].x, languageFelder[0].y, languageFelder[0].width, languageFelder[0].height);
+  text(languages[0], languageFelder[0].x, languageFelder[0].y, languageFelder[0].width, languageFelder[0].height);
   fill(textColor1);
-  text(languages.get(1), languageFelder[1].x, languageFelder[1].y, languageFelder[1].width, languageFelder[1].height);
+  text(languages[1], languageFelder[1].x, languageFelder[1].y, languageFelder[1].width, languageFelder[1].height);
 }
 
 void drawCurrentEinheit() {
@@ -126,64 +117,23 @@ void drawCurrentEinheit() {
   textAlign(LEFT, TOP);
   fill(textColor1);
   if (currentEinheit != null) {
-    text(currentEinheit.get(languages.get(0)), einheitenFelder[0].x, einheitenFelder[0].y, einheitenFelder[0].width, einheitenFelder[0].height);
+    text(currentEinheit.get(languages[0]).text, einheitenFelder[0].x, einheitenFelder[0].y, einheitenFelder[0].width, einheitenFelder[0].height);
   }
   fill(textColor0);
   if (currentEinheit != null) {
-    text(currentEinheit.get(languages.get(1)), einheitenFelder[1].x, einheitenFelder[1].y, einheitenFelder[1].width, einheitenFelder[1].height);
+    text(currentEinheit.get(languages[1]).text, einheitenFelder[1].x, einheitenFelder[1].y, einheitenFelder[1].width, einheitenFelder[1].height);
   }
-}
-
-void oscEvent(OscMessage inMessage) {
-  String pattern = inMessage.addrPattern();
-  if (pattern.equals(oscNamePath)) {
-    String name = inMessage.get(0).stringValue();
-    currentEinheit = akteure.einheit(name);
-    println(inMessage.get(0).stringValue());
-  }
-  if (pattern.equals(oscGetNamesPath)) {
-    OscMessage outMessage = new OscMessage(oscNamesPath);
-    StringList names = akteure.names();
-    Iterator iter = names.iterator();
-    while (iter.hasNext()) {
-      outMessage.add(iter.next().toString());
-    }
-    osc.send(outMessage, receiver);
-  }
-}
-
-boolean areLanguagesCorrect(StringList lhs, StringList rhs) {
-  boolean areCorrect = false;
-  if (lhs.size() == rhs.size() && lhs.size() == 2) {
-    for (int i = 0; i < introduction.languages().size(); ++i) {
-      if (lhs.get(i).equals(rhs.get(i))) {
-        areCorrect = true;
-      }
-    }
-  }
-  return areCorrect;
 }
 
 void keyPressed() {
   if (key == ' ' && !isRecording) {
-    int index = 0;
-    if (currentEinheit == null) {
-      currentEinheit = akteure.einheit(names.get(0));
-    }
-    while(akteure.akteurName(currentEinheit) != names.get(index)) { ++index; }
-    index = (index + 1) % names.size();
-    String name = names.get(index);
-    if (!name.isEmpty()) {
-      ApiEinheit einheit = akteure.einheit(name);
-      if (einheit != null) {
-        currentEinheit = einheit;
-        OscMessage message = new OscMessage(oscStartRecordingPath);
-        message.add(currentEinheit.id);
-        osc.send(message, receiver);
-        isRecording = true;
-        hasStateChanged = true;
-      }
-    }
+    int id = (int)random(einheiten.length);
+    currentEinheit = einheiten[id];
+    OscMessage message = new OscMessage(oscStartRecordingPath);
+    message.add(id);
+    osc.send(message, receiver);
+    isRecording = true;
+    hasStateChanged = true;
   }
 }
 
