@@ -1,9 +1,7 @@
-// DEBUGGING: Use SPACE key to change Einheit
-
 import netP5.*;
 import oscP5.*;
 
-boolean showLanguageIndicator = true;
+boolean showLanguageIndicator = false;
 
 OscP5 osc;
 int inPort = 6666;
@@ -13,7 +11,7 @@ String sendToAddress = "127.0.0.1";
 String oscStartRecordingPath = "/record";
 String oscStopRecordingPath = "/stop";
 
-int hSpace = 10;
+int hSpace = 30;
 int vSpace = 10;
 int textFeldWidth = 0;
 int feldHeight = 0;
@@ -41,7 +39,28 @@ Einheit currentEinheit;
 boolean isRecording = false;
 boolean hasStateChanged = true;
 
+HashMap<Character, Integer> keyIdMapping;
+
 void setup() {
+  keyIdMapping = new HashMap<Character, Integer>();
+  keyIdMapping.put('q', 0);
+  keyIdMapping.put('w', 1);
+  keyIdMapping.put('e', 2);
+  keyIdMapping.put('r', 3);
+  keyIdMapping.put('t', 4);
+  
+  keyIdMapping.put('a', 5);
+  keyIdMapping.put('s', 6);
+  keyIdMapping.put('d', 7);
+  keyIdMapping.put('f', 8);
+  keyIdMapping.put('g', 9);
+  
+  keyIdMapping.put('z', 10);
+  keyIdMapping.put('x', 11);
+  keyIdMapping.put('c', 12);
+  keyIdMapping.put('v', 13);
+  keyIdMapping.put('b', 14);
+  
   String dataPath = sketchPath() + "/texte/";
   String fontDir = sketchPath() + "/gnu-freefont_freeserif/";
   languages = new String[]{"DE", "EN"};
@@ -64,7 +83,7 @@ void setup() {
   textFeldWidth = width - langWidth - 3 * hSpace;
   feldHeight = (height / 2) - 2 * vSpace;
   
-  introductionFelder = new Feld[]{new Feld(hSpace, vSpace, width - 2 * hSpace,feldHeight), new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight)};
+  introductionFelder = new Feld[]{new Feld(hSpace, vSpace, width - 2 * hSpace, feldHeight), new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight)};
   languageFelder = new Feld[]{new Feld(hSpace, vSpace, langWidth, feldHeight), new Feld(hSpace, (height / 2) + vSpace, langWidth, feldHeight)};
   if (showLanguageIndicator) {
     einheitenFelder = new Feld[]{new Feld(langWidth + 2 * hSpace, vSpace, textFeldWidth,  feldHeight), new Feld(langWidth + 2 * hSpace, (height / 2) + vSpace, textFeldWidth,  feldHeight)};
@@ -99,7 +118,7 @@ void drawIntroduction() {
   textAlign(CENTER, CENTER);
   fill(textColor0);
   text(introduction.get(languages[0]), introductionFelder[0].x, introductionFelder[0].y, introductionFelder[0].width, introductionFelder[0].height);
-  textFont(font[1]);
+  textFont(font[0]);
   textSize(languageFontSize);
   fill(textColor1);
   text(introduction.get(languages[1]), introductionFelder[1].x, introductionFelder[1].y, introductionFelder[1].width, introductionFelder[1].height);
@@ -111,7 +130,7 @@ void drawLanguage() {
   textAlign(LEFT, TOP);
   fill(textColor0);
   text(languages[0], languageFelder[0].x, languageFelder[0].y, languageFelder[0].width, languageFelder[0].height);
-  textFont(fontLang[1]);
+  textFont(fontLang[0]);
   textSize(languageFontSize);
   fill(textColor1);
   text(languages[1], languageFelder[1].x, languageFelder[1].y, languageFelder[1].width, languageFelder[1].height);
@@ -125,7 +144,7 @@ void drawCurrentEinheit() {
   if (currentEinheit != null) {
     text(currentEinheit.get(languages[0]).text, einheitenFelder[0].x, einheitenFelder[0].y, einheitenFelder[0].width, einheitenFelder[0].height);
   }
-  textFont(font[1]);
+  textFont(font[0]);
   textSize(einheitenFontSize);
   fill(textColor0);
   if (currentEinheit != null) {
@@ -133,9 +152,10 @@ void drawCurrentEinheit() {
   }
 }
 
+
 void keyPressed() {
-  if (key == ' ' && !isRecording) {
-    int id = (int)random(einheiten.length);
+  if (!isRecording && keyIdMapping.containsKey(key)) {
+    int id = keyIdMapping.get(key);
     currentEinheit = einheiten[id];
     OscMessage message = new OscMessage(oscStartRecordingPath);
     message.add(id);
@@ -146,7 +166,7 @@ void keyPressed() {
 }
 
 void keyReleased() {
-  if (key == ' ') {
+  if (isRecording && keyIdMapping.containsKey(key) && getId(einheiten, currentEinheit) == keyIdMapping.get(key)) {
     isRecording = false;
     hasStateChanged = true;
     OscMessage message = new OscMessage(oscStopRecordingPath);

@@ -47,3 +47,12 @@ Einheit[] getEinheiten(String path, String[] languages) throws Exception {
   }
   return einheiten;
 }
+
+int getId(Einheit[] einheiten, Einheit einheit) {
+  for (int i = 0; i < einheiten.length; ++i) {
+    if (einheit == einheiten[i]) {
+      return i;
+    }
+  }
+  return -1;
+}
