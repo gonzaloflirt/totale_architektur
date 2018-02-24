@@ -3,7 +3,7 @@
 import netP5.*;
 import oscP5.*;
 
-boolean showLanguageIndicator = false;
+boolean showLanguageIndicator = true;
 
 OscP5 osc;
 int inPort = 6666;
@@ -22,8 +22,9 @@ Feld[] introductionFelder;
 Feld[] languageFelder;
 Feld[] einheitenFelder;
 
-PFont fontLang;
-PFont font;
+PFont[] fontLang;
+PFont[] font;
+
 int languageFontSize = 50;
 int einheitenFontSize = 35;
 int backgroundColor = 245;
@@ -42,6 +43,7 @@ boolean hasStateChanged = true;
 
 void setup() {
   String dataPath = sketchPath() + "/texte/";
+  String fontDir = sketchPath() + "/gnu-freefont_freeserif/";
   languages = new String[]{"DE", "EN"};
   try {
     introduction = getIntroduction(dataPath, languages);
@@ -55,9 +57,9 @@ void setup() {
   fullScreen();
   noStroke();
   noCursor();
-  
-  fontLang = createFont("Futura-Bold", 90);
-  font = createFont("Futura", 90);
+
+  fontLang = new PFont[]{createFont(fontDir + "FreeSerifBold.ttf", 90), createFont(fontDir + "FreeSerifBoldItalic.ttf", 90)};
+  font = new PFont[]{createFont(fontDir + "FreeSerif.ttf", 90), createFont(fontDir + "FreeSerifItalic.ttf", 90)};
   
   textFeldWidth = width - langWidth - 3 * hSpace;
   feldHeight = (height / 2) - 2 * vSpace;
@@ -92,33 +94,39 @@ void draw() {
 }
 
 void drawIntroduction() {
-  textFont(fontLang);
+  textFont(font[0]);
   textSize(languageFontSize);
   textAlign(CENTER, CENTER);
   fill(textColor0);
   text(introduction.get(languages[0]), introductionFelder[0].x, introductionFelder[0].y, introductionFelder[0].width, introductionFelder[0].height);
+  textFont(font[1]);
+  textSize(languageFontSize);
   fill(textColor1);
   text(introduction.get(languages[1]), introductionFelder[1].x, introductionFelder[1].y, introductionFelder[1].width, introductionFelder[1].height);
 }
 
 void drawLanguage() {
-  textFont(fontLang);
+  textFont(fontLang[0]);
   textSize(languageFontSize);
   textAlign(LEFT, TOP);
   fill(textColor0);
   text(languages[0], languageFelder[0].x, languageFelder[0].y, languageFelder[0].width, languageFelder[0].height);
+  textFont(fontLang[1]);
+  textSize(languageFontSize);
   fill(textColor1);
   text(languages[1], languageFelder[1].x, languageFelder[1].y, languageFelder[1].width, languageFelder[1].height);
 }
 
 void drawCurrentEinheit() {
-  textFont(font);
+  textFont(font[0]);
   textSize(einheitenFontSize);
   textAlign(LEFT, TOP);
   fill(textColor1);
   if (currentEinheit != null) {
     text(currentEinheit.get(languages[0]).text, einheitenFelder[0].x, einheitenFelder[0].y, einheitenFelder[0].width, einheitenFelder[0].height);
   }
+  textFont(font[1]);
+  textSize(einheitenFontSize);
   fill(textColor0);
   if (currentEinheit != null) {
     text(currentEinheit.get(languages[1]).text, einheitenFelder[1].x, einheitenFelder[1].y, einheitenFelder[1].width, einheitenFelder[1].height);
