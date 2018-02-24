@@ -39,6 +39,7 @@ StringList languages;
 ApiEinheit currentEinheit;
 
 boolean isRecording = false;
+boolean hasStateChanged = true;
 
 void setup() {
   String dataPath = sketchPath() + "/data/";
@@ -77,13 +78,17 @@ void setup() {
 }
 
 void draw() {
-  background(backgroundColor);
-  if (isRecording) {
-    drawLanguage();
-    drawCurrentEinheit();
-  }
-  else {
-    drawIntroduction();
+  if (hasStateChanged)
+  {
+    background(backgroundColor);
+    if (isRecording) {
+      drawLanguage();
+      drawCurrentEinheit();
+    }
+    else if (!isRecording) {
+      drawIntroduction();
+    }
+    hasStateChanged = false;
   }
 }
 
@@ -168,6 +173,7 @@ void keyPressed() {
         message.add(currentEinheit.id);
         osc.send(message, receiver);
         isRecording = true;
+        hasStateChanged = true;
       }
     }
   }
@@ -176,6 +182,7 @@ void keyPressed() {
 void keyReleased() {
   if (key == ' ') {
     isRecording = false;
+    hasStateChanged = true;
     OscMessage message = new OscMessage(oscStopRecordingPath);
     osc.send(message, receiver);
   }
