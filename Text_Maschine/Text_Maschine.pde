@@ -3,6 +3,8 @@
 import netP5.*;
 import oscP5.*;
 
+boolean showLanguageIndicator = false;
+
 OscP5 osc;
 int inPort = 6666;
 NetAddress receiver;
@@ -71,8 +73,12 @@ void setup() {
   
   introductionFelder = new Feld[]{new Feld(hSpace, vSpace, width - 2 * hSpace,feldHeight), new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight)};
   languageFelder = new Feld[]{new Feld(hSpace, vSpace, langWidth, feldHeight), new Feld(hSpace, (height / 2) + vSpace, langWidth, feldHeight)};
-  einheitenFelder = new Feld[]{new Feld(langWidth + 2 * hSpace, vSpace, textFeldWidth,  feldHeight), new Feld(langWidth + 2 * hSpace, (height / 2) + vSpace, textFeldWidth,  feldHeight)};
-  
+  if (showLanguageIndicator) {
+    einheitenFelder = new Feld[]{new Feld(langWidth + 2 * hSpace, vSpace, textFeldWidth,  feldHeight), new Feld(langWidth + 2 * hSpace, (height / 2) + vSpace, textFeldWidth,  feldHeight)};
+  } else {
+    einheitenFelder = new Feld[]{new Feld(hSpace, vSpace, width - 2 * hSpace,  feldHeight), new Feld(hSpace, (height / 2) + vSpace, width - 2 * hSpace,  feldHeight)};
+  }
+
   osc = new OscP5(this, inPort);
   receiver = new NetAddress(sendToAddress, sendToPort);
 }
@@ -82,8 +88,10 @@ void draw() {
   {
     background(backgroundColor);
     if (isRecording) {
-      drawLanguage();
       drawCurrentEinheit();
+      if (showLanguageIndicator) {
+        drawLanguage();
+      }
     }
     else if (!isRecording) {
       drawIntroduction();
