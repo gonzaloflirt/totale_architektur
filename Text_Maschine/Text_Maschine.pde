@@ -44,7 +44,7 @@ boolean isRecording = false;
 boolean hasStateChanged = true;
 
 void setup() {
-  String dataPath = sketchPath() + "/data/";
+  String dataPath = sketchPath() + "/texte/";
   try {
     introduction = new Introduction(dataPath);
     akteure = new Akteure(dataPath);
