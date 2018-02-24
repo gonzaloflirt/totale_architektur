@@ -41,9 +41,10 @@ ApiEinheit currentEinheit;
 boolean isRecording = false;
 
 void setup() {
+  String dataPath = sketchPath() + "/data/";
   try {
-    introduction = new Introduction(sketchPath() + "/data/");
-    akteure = new Akteure(sketchPath() + "/Einheiten/");
+    introduction = new Introduction(dataPath);
+    akteure = new Akteure(dataPath);
   } catch(Exception e) {
     println("Error reading txt files: " + e.getMessage());
     exit();

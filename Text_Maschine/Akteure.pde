@@ -21,43 +21,39 @@ class Akteure extends HashMap<String, Einheiten> {
     Set<String> allLanguages = new HashSet();
     String[] filenames = listFilenames(path, "txt");
     for (int i = 0; i < filenames.length; ++i) {
-      // Remove extension and parse filename
-      String filename = filenames[i].substring(0, filenames[i].lastIndexOf('.'));
-      String[] tmp = split(filename, "_");
-      if (tmp.length < 2) {
-        throw new Exception(filename + ": Format of txt files has to be {Id}_{Name}_{Description}.txt where {Description} is optional.");
-      }
-      
-      // Get name of Akteur
-      String name = tmp[1];
-      // Get Id of Einheit
-      int id = stringToInt(tmp[0]);
-      if ((previousId == -1 && id != 0) || ++previousId != id) {
-        throw new Exception(filename + ": Einheiten Ids have to be consecutive numbers starting from 00. Eg. 00_Gropius_someInfo.txt");
-      }
-      
-      // Get Einheit
-      println("Read " + path + filenames[i]);
-      String[] lines = loadStrings(path + filenames[i]);
-      Einheit einheit = new Einheit();
-      Set languages = new HashSet();
-      for (int j = 0; j < lines.length; ++j) {
-        String[] first = split(lines[j], "@");      
-        einheit.set(first[0], first[1]);
-        languages.add(first[0]);
-      }
-      if (!allLanguages.isEmpty() && allLanguages.hashCode() != languages.hashCode()) {
-        throw new Exception(filename + ": All Einheiten have to provide versions of the same languages");
-      }
-      allLanguages = languages;
-      
-      // Add to Map
-      if (this.containsKey(name)) {
-        this.get(name).put(id, einheit);
-      } else {
-        Einheiten einheiten = new Einheiten();
-        einheiten.put(id, einheit);
-        this.put(name, einheiten);
+      String[] parsed = match(filenames[i], "(.*?)_(.*?)_(.*?).txt");
+      if (parsed != null && parsed.length == 4) {
+        // Get name of Akteur
+        String name = parsed[2];
+        // Get Id of Einheit
+        int id = stringToInt(parsed[1]);
+        if ((previousId == -1 && id != 0) || ++previousId != id) {
+          throw new Exception(filenames[i] + ": Einheiten Ids have to be consecutive numbers starting from 00. Eg. 00_Gropius_someInfo.txt");
+        }
+        
+        // Get Einheit
+        println("Read " + path + filenames[i]);
+        String[] lines = loadStrings(path + filenames[i]);
+        Einheit einheit = new Einheit();
+        Set languages = new HashSet();
+        for (int j = 0; j < lines.length; ++j) {
+          String[] first = split(lines[j], "@");      
+          einheit.set(first[0], first[1]);
+          languages.add(first[0]);
+        }
+        if (!allLanguages.isEmpty() && allLanguages.hashCode() != languages.hashCode()) {
+          throw new Exception(filenames[i] + ": All Einheiten have to provide versions of the same languages");
+        }
+        allLanguages = languages;
+        
+        // Add to Map
+        if (this.containsKey(name)) {
+          this.get(name).put(id, einheit);
+        } else {
+          Einheiten einheiten = new Einheiten();
+          einheiten.put(id, einheit);
+          this.put(name, einheiten);
+        }
       }
     }
     
