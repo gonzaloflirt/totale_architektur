@@ -18,11 +18,14 @@ def newRecordings():
     return newRecs
 
 def createClipFromRecording(fileName):
+    fade = config.getfloat('vereinheiter', 'fadeDur') * 1000
     treshold = config.getfloat('vereinheiter', 'compressorTreshold')
     ratio = config.getfloat('vereinheiter', 'compressorRatio')
     attack = config.getfloat('vereinheiter', 'compressorAttack')
     release = config.getfloat('vereinheiter', 'compressorRelease')
     frames = AudioSegment.from_wav(os.path.join(recordingsDir, fileName))
+    frames = frames.fade_in(fade)
+    frames = frames.fade_out(fade)
     frames = effects.normalize(frames)
     frames = effects.compress_dynamic_range(
         frames, threshold = treshold, ratio = ratio, attack = attack, release = release)
