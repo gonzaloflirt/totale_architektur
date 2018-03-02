@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import ast, argparse, configparser, datetime, io, os
+import ast, argparse, configparser, datetime, io, os, time
 from pydub import AudioSegment
 from pydub import effects
 from random import randint
@@ -84,5 +84,10 @@ sumsDir = os.path.realpath(config.get('vereinheiter', 'sumsDir'))
 if not os.path.exists(sumsDir):
     os.makedirs(sumsDir)
 
-updateDatabase()
+try:
+    while True:
+        updateDatabase()
+        time.sleep(1)
+except KeyboardInterrupt:
+    pass
 
