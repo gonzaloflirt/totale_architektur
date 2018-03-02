@@ -33,18 +33,23 @@ def createClipFromRecording(fileName):
     chunks = [frames[chunk[0]:chunk[1]] for chunk in nonsilent]
     frames = AudioSegment.silent(100)
     for chunk in chunks:
-        chunk = chunk.fade_in(100)
-        chunk = chunk.fade_out(100)
-        frames = frames.append(chunk)
+        if len(chunk) > 100:
+            chunk = chunk.fade_in(100)
+            chunk = chunk.fade_out(100)
+            frames = frames.append(chunk)
     frames = effects.compress_dynamic_range(
         frames, threshold = treshold, ratio = ratio, attack = attack, release = release)
     frames = effects.normalize(frames)
-    clipName = os.path.join(clipsDir, fileName)
-    frames.export(clipName, format = 'wav')
-    einheit = os.path.basename(fileName).split('_')[0]
-    database.writeClip(einheit, clipName)
-    print('new clip:', clipName)
-    return [einheit, clipName]
+    if (len(frames) > config.getfloat('vereinheiter', 'minClipLen') * 1000):
+        clipName = os.path.join(clipsDir, fileName)
+        frames.export(clipName, format = 'wav')
+        einheit = os.path.basename(fileName).split('_')[0]
+        database.writeClip(einheit, clipName)
+        print('new clip:', clipName)
+        return [einheit, clipName]
+    else:
+        print('recording too short:', fileName)
+        return [None, None]
 
 def addClipsToSums(einheit, clips, sums):
     numSpeakers = config.getint('vereinheiter', 'numSpeakers')
@@ -74,13 +79,14 @@ def addClipsToSums(einheit, clips, sums):
 def updateDatabase():
     for recording in newRecordings():
         [einheit, clip] = createClipFromRecording(recording)
-        [clips, sums] = database.readEinheit(einheit)
-        if len(clips) >= config.getint('vereinheiter', 'numSpeakers'):
-            sums = addClipsToSums(einheit, clips, sums)
-            clips = [clip]
-        else:
-            clips.append(clip)
-        database.writeEinheit(einheit, clips, sums)
+        if clip is not None:
+            [clips, sums] = database.readEinheit(einheit)
+            if len(clips) >= config.getint('vereinheiter', 'numSpeakers'):
+                sums = addClipsToSums(einheit, clips, sums)
+                clips = [clip]
+            else:
+                clips.append(clip)
+            database.writeEinheit(einheit, clips, sums)
 
 config = configparser.ConfigParser()
 config.read('totale_architektur.config')
