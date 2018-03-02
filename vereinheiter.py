@@ -6,15 +6,6 @@ from pydub import effects
 from random import randint
 from database import *
 
-def weekday():
-    return datetime.datetime.now().strftime("%A")
-
-def date():
-    return pastDate(0)
-
-def pastDate(days):
-    return (datetime.datetime.now() - datetime.timedelta(days)).strftime("%Y-%m-%d")
-
 def allClips():
     files =  [file for file in os.listdir(clipsDir)
         if (os.path.isfile(os.path.join(clipsDir, file)))]
@@ -83,6 +74,4 @@ if not os.path.exists(sumsDir):
     os.makedirs(sumsDir)
 
 updateDatabase()
-
-#print(date())
 
