@@ -6,11 +6,6 @@ from pydub import effects
 from random import randint
 from database import *
 
-def allClips():
-    files =  [file for file in os.listdir(clipsDir)
-        if (os.path.isfile(os.path.join(clipsDir, file)))]
-    return [file for file in files if (file.endswith('.wav'))]
-
 def clipsForEinheit(i):
      return [einheit for einheit in allClips() if einheit.startswith(str(i) + '_')]
 
@@ -18,7 +13,9 @@ def newRecordings():
     files = [file for file in os.listdir(recordingsDir)
         if (os.path.isfile(os.path.join(recordingsDir, file)))]
     recordings = [file for file in files if (file.endswith('.wav'))]
-    return sorted([file for file in recordings if file not in allClips()])
+    newRecs = sorted([file for file in recordings if file not in database.readRecs()])
+    [database.writeRec(rec) for rec in newRecs]
+    return newRecs
 
 def createClipFromRecording(fileName):
     treshold = config.getfloat('vereinheiter', 'compressorTreshold')

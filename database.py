@@ -14,6 +14,8 @@ class database:
             '''CREATE TABLE IF NOT EXISTS clips (einheit, path)''')
         db.execute(
             '''CREATE TABLE IF NOT EXISTS sums (einheit, path)''')
+        db.execute(
+            '''CREATE TABLE IF NOT EXISTS recs (path)''')
         return db
 
     @staticmethod
@@ -48,6 +50,13 @@ class database:
         db.execute(
             '''INSERT OR REPLACE INTO sums (einheit, path) VALUES (?, ?)''',
             [str(einheit), path])
+        db.commit()
+        db.close()
+
+    @staticmethod
+    def writeRec(path):
+        db = database.connect()
+        db.execute('''INSERT OR REPLACE INTO recs (path) VALUES (?)''', [path])
         db.commit()
         db.close()
 
@@ -91,3 +100,13 @@ class database:
         else:
             return [path[0] for path in daten]
 
+    @staticmethod
+    def readRecs():
+        db = database.connect()
+        entry = db.execute('''SELECT * FROM recs''')
+        daten = entry.fetchall()
+        db.close()
+        if daten is None:
+            return []
+        else:
+            return [path[0] for path in daten]
