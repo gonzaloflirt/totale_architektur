@@ -42,10 +42,6 @@ def record(einheit):
     audio.terminate()
     print('finished recording')
 
-    trim = config.getfloat('recorder', 'trimSeconds') * 1000
-    frames = frames[trim:] # trim begin
-    frames = frames[:-trim] # trim end
-
     if (frames.duration_seconds > 0):
         filename = str(einheit) + '_' + datetime.datetime.now().isoformat()
         dataDir = config.get('recorder', 'direcory')
