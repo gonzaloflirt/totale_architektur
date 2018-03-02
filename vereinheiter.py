@@ -27,6 +27,7 @@ def createClipFromRecording(fileName):
     frames = frames.fade_in(fade)
     frames = frames.fade_out(fade)
     frames = effects.normalize(frames)
+    frames = frames.remove_dc_offset()
     frames = effects.compress_dynamic_range(
         frames, threshold = treshold, ratio = ratio, attack = attack, release = release)
     frames = effects.normalize(frames)
@@ -53,6 +54,7 @@ def addClipsToSums(einheit, clips, sums):
         result = result.overlay(clip - 6, position = randint(0, duration - len(clip)))
         result = result.overlay(sum - 6 - attenuation, position = randint(0, duration - len(sum)))
         result = effects.normalize(result)
+        result = result.remove_dc_offset()
         sumName = os.path.join(sumsDir,
             str(einheit) + '_' + datetime.datetime.now().isoformat() + '.wav')
         result.export(sumName, format = 'wav')
