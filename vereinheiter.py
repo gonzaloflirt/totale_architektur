@@ -32,34 +32,45 @@ def createClipFromRecording(fileName):
     frames = effects.normalize(frames)
     clipName = os.path.join(clipsDir, fileName)
     frames.export(clipName, format = 'wav')
+    einheit = os.path.basename(fileName).split('_')[0]
+    database.writeClip(einheit, clipName)
     print('new clip:', clipName)
-    return clipName
+    return [einheit, clipName]
 
-def sumClips(einheit, clipNames):
-    files = [AudioSegment.from_wav(os.path.join(clipsDir, clipName))
-            for clipName in clipNames]
-    duration = max([len(file) for file in files])
-    result = AudioSegment.silent(duration = duration)
-    for file in files:
-        result = result.overlay(file - 9, position = randint(0, duration - len(file)))
-    result = effects.normalize(result)
-    sumName = os.path.join(sumsDir,
-        str(einheit) + '_' + datetime.datetime.now().isoformat() + '.wav')
-    result.export(sumName, format = 'wav')
-    print('new sum:', sumName)
-    return sumName
+def addClipsToSums(einheit, clips, sums):
+    numSpeakers = config.getint('vereinheiter', 'numSpeakers')
+    attenuation = config.getint('vereinheiter', 'sumAttenuation')
+    clipsAudio = [AudioSegment.from_wav(clip) for clip in clips]
+    sumsAudio = [AudioSegment.from_wav(sum) for sum in sums]
+    while len(sumsAudio) < numSpeakers:
+        sumsAudio.append(AudioSegment.silent(1))
+    newSums = []
+    for i in range(0, numSpeakers):
+        sum = sumsAudio[i]
+        clip = clipsAudio[i]
+        duration = max(len(clip), len(sum))
+        result = AudioSegment.silent(duration = duration)
+        result = result.overlay(clip - 6, position = randint(0, duration - len(clip)))
+        result = result.overlay(sum - 6 - attenuation, position = randint(0, duration - len(sum)))
+        result = effects.normalize(result)
+        sumName = os.path.join(sumsDir,
+            str(einheit) + '_' + datetime.datetime.now().isoformat() + '.wav')
+        result.export(sumName, format = 'wav')
+        newSums.append(sumName)
+    print('new sums for einheit', einheit)
+    [print('  ', sum) for sum in newSums]
+    return newSums
 
 def updateDatabase():
     for recording in newRecordings():
-        clip = createClipFromRecording(recording)
-        clipEinheit = os.path.basename(clip).split('_')[0]
-        einheit = database.read(clipEinheit)
-        if len(einheit) >= config.getint('vereinheiter', 'numSpeakers'):
-            sum = sumClips(clipEinheit, einheit)
-            database.write(clipEinheit, [sum, clip])
+        [einheit, clip] = createClipFromRecording(recording)
+        [clips, sums] = database.readEinheit(einheit)
+        if len(clips) >= config.getint('vereinheiter', 'numSpeakers'):
+            sums = addClipsToSums(einheit, clips, sums)
+            clips = [clip]
         else:
-            einheit.append(clip)
-            database.write(clipEinheit, einheit)
+            clips.append(clip)
+        database.writeEinheit(einheit, clips, sums)
 
 config = configparser.ConfigParser()
 config.read('totale_architektur.config')

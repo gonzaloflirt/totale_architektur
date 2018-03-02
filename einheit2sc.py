@@ -7,4 +7,4 @@ if len(sys.argv) != 2:
     print('invalid input')
     sys.exit()
 
-print(database.read(sys.argv[1]))
+print(database.readEinheit(sys.argv[1]))

@@ -3,8 +3,9 @@ e = ();
 
 // SETTINGS //////////////////////////////////////////////////////////////////////////////
 
-e.numSpeakers = 9;
+e.numSpeakers = 5;
 e.numEinheiten = 15;
+e.sumsVolume = -3;
 e.dataDir = Document.current.dir +/+ 'data';
 s.options.outDevice = 'Built-in Output';
 
@@ -13,33 +14,46 @@ s.options.outDevice = 'Built-in Output';
 s.options.numOutputBusChannels = e.numSpeakers;
 s.options.numInputBusChannels = 0;
 e.buffers = ();
+e.buffers.clips = ();
+e.buffers.sums = ();
 e.einheit = Pseq((0..e.numEinheiten), inf).asStream;
 e.form  = Pseq([\blockig, \fliessend], inf).asStream;
 
 e.readEinheit = {{ |einheit|
-	var paths = (Document.current.dir +/+ 'einheit2sc.py' + einheit).unixCmdGetStdOut.interpret;
-	if (e.buffers[einheit].notNil, {
-		e.buffers[einheit].collect({|buffer| buffer.free()});
+	var data = (Document.current.dir +/+ 'einheit2sc.py' + einheit).unixCmdGetStdOut.interpret;
+	var clips = data[0];
+	var sums = data[1];
+	postln(sums);
+	if (e.buffers.clips[einheit].notNil, {
+		e.buffers.clips[einheit].collect({|buffer| buffer.free()});
 	});
-	if (paths.size() > 0,
+	if (e.buffers.sums[einheit].notNil, {
+		e.buffers.sums[einheit].collect({|buffer| buffer.free()});
+	});
+	if (clips.size() > 0,
 		{
-			e.buffers[einheit] = paths.collect({|path| Buffer.read(s, path) });
+			e.buffers.clips[einheit] = clips.collect({|path| Buffer.read(s, path) });
 		}, {
-			e.buffers[einheit] = nil;
+			e.buffers.clips[einheit] = nil;
+	});
+	if (sums.size() > 0,
+		{
+			e.buffers.sums[einheit] = sums.collect({|path| Buffer.read(s, path) });
+		}, {
+			e.buffers.sums[einheit] = nil;
 	});
 }};
 
-e.playEinheit = {{
-	|buffers|
+e.playClips = {{
+	|buffers, duration|
 	var form = e.form.next;
-	var maxDuration = (buffers.collect({ |b| b.duration(); })).maxItem;
 	var channel = round(Array.interpolation(buffers.size(), 0, e.numSpeakers - 1));
 	var iphase = Array.interpolation(buffers.size(), 0, 2 - (2 / buffers.size())) + rrand(0, 2);
-	var panSpeed = maxDuration.reciprocal;
+	var panSpeed = duration.reciprocal;
 	if (buffers.size == 1, { channel = [rrand(0, e.numSpeakers - 1)]; });
 	buffers.scramble.collect({
 		|b, i|
-		var defer = rrand(0, maxDuration - b.duration());
+		var defer = rrand(0, duration - b.duration());
 		Synth.new(form, [
 			\bufnum, b.bufnum,
 			\defer, defer,
@@ -48,6 +62,27 @@ e.playEinheit = {{
 			\panSpeed, panSpeed
 		]);
 	});
+}};
+
+e.playSums = {{
+	|buffers, duration|
+	var channels = (0..e.numSpeakers-1).scramble;
+	buffers.collect({
+		|b, i|
+		var defer = rrand(0, duration - b.duration());
+		Synth.new(\blockig, [
+			\bufnum, b.bufnum,
+			\defer, defer,
+			\channel, channels[i],
+			\vol, e.sumsVolume
+		]);
+	});
+}};
+
+e.playEinheit = {{
+	|einheit, duration|
+	e.playClips.value(e.buffers.clips[einheit], duration);
+	e.playSums.value(e.buffers.sums[einheit], duration);
 }};
 
 s.waitForBoot{
@@ -75,15 +110,25 @@ s.waitForBoot{
 		var einheit = e.einheit.next;
 		e.readEinheit.value(einheit);
 		s.sync;
-		if (e.buffers[einheit].notNil, {
-			var duration = (e.buffers[einheit].collect({ |b| b.duration(); })).maxItem;
+		if (e.buffers.clips[einheit].notNil, {
+			var clipsDuration = e.buffers.clips[einheit].collect({ |b| b.duration(); });
+			var sumsDuration = e.buffers.sums[einheit].collect({ |b| b.duration(); });
+			var duration = (clipsDuration.addAll(sumsDuration)).maxItem;
 			postln("play einheit " + einheit + " with duration " + duration);
-			e.playEinheit.value(e.buffers[einheit]);
+			e.playEinheit.value(einheit, duration);
 			wait(duration + 1);
 		}, {
-			postln("noop einheit " +  einheit);
+			postln('noop einheit ' +  einheit);
 			0.01.wait;
 		});
 	}}).play;
 }
 )
+
+Tdef(\play).stop;
+
+Ndef(\stereoMixdown, {
+	ReplaceOut.ar(0, Splay.ar(In.ar(0, e.numSpeakers)));
+	ReplaceOut.ar(2, DC.ar(0) ! (e.numSpeakers - 2));
+}).play;
+Ndef(\stereoMixdown).free;

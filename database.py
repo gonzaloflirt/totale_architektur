@@ -9,28 +9,85 @@ class database:
         path = os.path.join(filePath, config.get('database', 'path'))
         db = sqlite3.connect(path)
         db.execute(
-            '''CREATE TABLE IF NOT EXISTS einheiten (einheit INTEGER UNIQUE, daten)''')
+            '''CREATE TABLE IF NOT EXISTS einheiten (einheit INTEGER UNIQUE, clipPaths, sumPaths)''')
+        db.execute(
+            '''CREATE TABLE IF NOT EXISTS clips (einheit, path)''')
+        db.execute(
+            '''CREATE TABLE IF NOT EXISTS sums (einheit, path)''')
         return db
 
     @staticmethod
-    def write(einheit, paths):
+    def writeEinheit(einheit, clipPaths, sumPaths):
         db = database.connect()
-        if len(paths) > 0:
-            daten = ','.join(path for path in paths)
-            db.execute("INSERT OR REPLACE INTO einheiten (einheit, daten) VALUES (?, ?)",
-                [str(einheit), daten])
+        if len(clipPaths) > 0:
+            clips = ','.join(clip for clip in clipPaths)
         else:
-            db.execute("DELETE FROM einheiten WHERE einheit=?", [einheit])
+            clips = None
+        if len(sumPaths) > 0:
+            sums = ','.join(sum for sum in sumPaths)
+        else:
+            sums = None
+        db.execute(
+            '''INSERT OR REPLACE INTO einheiten (einheit, clipPaths, sumPaths) VALUES (?, ?, ?)''',
+            [str(einheit), clips, sums])
         db.commit()
         db.close()
 
     @staticmethod
-    def read(einheit):
+    def writeClip(einheit, path):
         db = database.connect()
-        entry = db.execute("SELECT daten FROM einheiten WHERE (einheit IS ?)", [einheit])
+        db.execute(
+            '''INSERT OR REPLACE INTO clips (einheit, path) VALUES (?, ?)''',
+            [str(einheit), path])
+        db.commit()
+        db.close()
+
+    @staticmethod
+    def writeSum(einheit, path):
+        db = database.connect()
+        db.execute(
+            '''INSERT OR REPLACE INTO sums (einheit, path) VALUES (?, ?)''',
+            [str(einheit), path])
+        db.commit()
+        db.close()
+
+    @staticmethod
+    def readEinheit(einheit):
+        db = database.connect()
+        entry = db.execute(
+            '''SELECT clipPaths, sumPaths FROM einheiten WHERE (einheit IS ?)''',
+            [einheit])
         daten = entry.fetchone()
+        db.close()
+        if daten is None or daten[0] is None:
+            clips = []
+        else:
+            clips = daten[0].split(',')
+        if daten is None or daten[1] is None:
+            sums = []
+        else:
+            sums = daten[1].split(',')
+        return [clips, sums]
+
+    @staticmethod
+    def readClips(einheit):
+        db = database.connect()
+        entry = db.execute('''SELECT path FROM clips WHERE (einheit IS ?)''', [einheit])
+        daten = entry.fetchall()
         db.close()
         if daten is None:
             return []
         else:
-            return daten[0].split(',')
+            return [path[0] for path in daten]
+
+    @staticmethod
+    def readSums(einheit):
+        db = database.connect()
+        entry = db.execute('''SELECT path FROM sums WHERE (einheit IS ?)''', [einheit])
+        daten = entry.fetchall()
+        db.close()
+        if daten is None:
+            return []
+        else:
+            return [path[0] for path in daten]
+
