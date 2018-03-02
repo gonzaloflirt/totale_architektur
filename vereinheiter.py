@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import ast, argparse, configparser, datetime, io, os, time
-from pydub import AudioSegment
-from pydub import effects
+from pydub import AudioSegment, effects, silence
 from random import randint
 from database import *
 
@@ -19,6 +18,8 @@ def newRecordings():
 
 def createClipFromRecording(fileName):
     fade = config.getfloat('vereinheiter', 'fadeDur') * 1000
+    silenceLen = int(config.getfloat('vereinheiter', 'silenceLen') * 1000)
+    silenceTresh = config.getfloat('vereinheiter', 'silenceTresh')
     treshold = config.getfloat('vereinheiter', 'compressorTreshold')
     ratio = config.getfloat('vereinheiter', 'compressorRatio')
     attack = config.getfloat('vereinheiter', 'compressorAttack')
@@ -28,6 +29,13 @@ def createClipFromRecording(fileName):
     frames = frames.fade_out(fade)
     frames = effects.normalize(frames)
     frames = frames.remove_dc_offset()
+    nonsilent = silence.detect_nonsilent(frames, silenceLen, silenceTresh)
+    chunks = [frames[chunk[0]:chunk[1]] for chunk in nonsilent]
+    frames = AudioSegment.silent(100)
+    for chunk in chunks:
+        chunk = chunk.fade_in(100)
+        chunk = chunk.fade_out(100)
+        frames = frames.append(chunk)
     frames = effects.compress_dynamic_range(
         frames, threshold = treshold, ratio = ratio, attack = attack, release = release)
     frames = effects.normalize(frames)
