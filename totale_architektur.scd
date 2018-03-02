@@ -122,6 +122,8 @@ s.waitForBoot{
 			0.01.wait;
 		});
 	}}).play;
+
+	OSCdef(\volume, {|msg| s.volume = msg[1]; }, '/volume')
 }
 )
 

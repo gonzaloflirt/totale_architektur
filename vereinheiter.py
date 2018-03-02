@@ -2,6 +2,7 @@
 
 import ast, argparse, configparser, datetime, io, os, time
 from pydub import AudioSegment, effects, silence
+from pythonosc import udp_client
 from random import randint
 from database import *
 
@@ -88,6 +89,16 @@ def updateDatabase():
                 clips.append(clip)
             database.writeEinheit(einheit, clips, sums)
 
+def setSCVolume():
+    dayStart = config.getint('vereinheiter', 'dayStart')
+    dayEnd = config.getint('vereinheiter', 'dayEnd')
+    currentHour = int(datetime.datetime.now().strftime("%H"))
+    if currentHour > dayStart and currentHour <= dayEnd:
+        volume = config.getint('vereinheiter', 'dayVolume')
+    else:
+        volume = config.getint('vereinheiter', 'nightVolume')
+    oscClient.send_message('/volume', volume)
+
 config = configparser.ConfigParser()
 config.read('totale_architektur.config')
 recordingsDir = os.path.realpath(config.get('recorder', 'direcory'))
@@ -99,10 +110,14 @@ if not os.path.exists(clipsDir):
 sumsDir = os.path.realpath(config.get('vereinheiter', 'sumsDir'))
 if not os.path.exists(sumsDir):
     os.makedirs(sumsDir)
+oscClient = udp_client.SimpleUDPClient(
+    config.get('vereinheiter', 'scIP'),
+    config.getint('vereinheiter', 'scPort'))
 
 try:
     while True:
         updateDatabase()
+        setSCVolume()
         time.sleep(1)
 except KeyboardInterrupt:
     pass
