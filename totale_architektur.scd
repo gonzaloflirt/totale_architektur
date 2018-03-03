@@ -16,14 +16,13 @@ s.options.numInputBusChannels = 0;
 e.buffers = ();
 e.buffers.clips = ();
 e.buffers.sums = ();
-e.einheit = Pseq((0..e.numEinheiten), inf).asStream;
+e.einheit = Pseq((1..e.numEinheiten), inf).asStream;
 e.form  = Pseq([\blockig, \fliessend], inf).asStream;
 
 e.readEinheit = {{ |einheit|
 	var data = (Document.current.dir +/+ 'einheit2sc.py' + einheit).unixCmdGetStdOut.interpret;
 	var clips = data[0];
 	var sums = data[1];
-	postln(sums);
 	if (e.buffers.clips[einheit].notNil, {
 		e.buffers.clips[einheit].collect({|buffer| buffer.free()});
 	});
@@ -118,8 +117,8 @@ s.waitForBoot{
 			e.playEinheit.value(einheit, duration);
 			wait(duration + 1);
 		}, {
-			postln('noop einheit ' +  einheit);
-			0.01.wait;
+			postln("noop einheit " + einheit);
+			0.001.wait;
 		});
 	}}).play;
 

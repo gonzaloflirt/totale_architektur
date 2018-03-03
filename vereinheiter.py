@@ -6,9 +6,6 @@ from pythonosc import udp_client
 from random import randint
 from database import *
 
-def clipsForEinheit(i):
-     return [einheit for einheit in allClips() if einheit.startswith(str(i) + '_')]
-
 def newRecordings():
     files = [file for file in os.listdir(recordingsDir)
         if (os.path.isfile(os.path.join(recordingsDir, file)))]
