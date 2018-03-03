@@ -44,11 +44,10 @@ class Recorder:
             time.sleep(1)
 
         if not self.canceled and frames.duration_seconds > 0:
-            dataDir = config.get('recorder', 'direcory')
-            if not os.path.exists(dataDir):
-                os.makedirs(dataDir)
             frames.export(os.path.join(dataDir, filename) + '.wav', format = 'wav')
             print('wrote', filename, 'duration:', frames.duration_seconds, 'seconds')
+            syncTarget = config.get('recorder', 'rsyncTarget')
+            os.system('rsync -avrz {} {}'.format(dataDir, syncTarget))
         else:
             print('canceled recording', filename)
 
@@ -120,6 +119,10 @@ def waitForKeypress():
 config = configparser.ConfigParser()
 config.read('totale_architektur.config')
 printDevices()
+
+dataDir = config.get('recorder', 'direcory')
+if not os.path.exists(dataDir):
+    os.makedirs(dataDir)
 
 oscDispatcher = dispatcher.Dispatcher()
 oscDispatcher.map('/record', OSCrecordHandler, 'einheit')

@@ -101,7 +101,7 @@ def setSCVolume():
 
 config = configparser.ConfigParser()
 config.read('totale_architektur.config')
-recordingsDir = os.path.realpath(config.get('recorder', 'direcory'))
+recordingsDir = os.path.realpath(config.get('vereinheiter', 'recsDir'))
 if not os.path.exists(recordingsDir):
     os.makedirs(recordingsDir)
 clipsDir = os.path.realpath(config.get('vereinheiter', 'clipsDir'))
