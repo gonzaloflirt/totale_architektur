@@ -23,6 +23,7 @@ def createClipFromRecording(fileName):
     attack = config.getfloat('vereinheiter', 'compressorAttack')
     release = config.getfloat('vereinheiter', 'compressorRelease')
     frames = AudioSegment.from_wav(os.path.join(recordingsDir, fileName))
+    frames = frames.set_sample_width(4)
     frames = frames.fade_in(fade)
     frames = frames.fade_out(fade)
     frames = effects.normalize(frames)
