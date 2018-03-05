@@ -141,15 +141,12 @@ void drawCurrentEinheit() {
   textSize(einheitenFontSize);
   textAlign(LEFT, TOP);
   fill(textColor1);
-  if (currentEinheit != null) {
-    text(currentEinheit.get(languages[0]).text, einheitenFelder[0].x, einheitenFelder[0].y, einheitenFelder[0].width, einheitenFelder[0].height);
-  }
+  text(currentEinheit.get(languages[0]).text, einheitenFelder[0].x, einheitenFelder[0].y, einheitenFelder[0].width, einheitenFelder[0].height);
+
   textFont(font[0]);
   textSize(einheitenFontSize);
   fill(textColor0);
-  if (currentEinheit != null) {
-    text(currentEinheit.get(languages[1]).text, einheitenFelder[1].x, einheitenFelder[1].y, einheitenFelder[1].width, einheitenFelder[1].height);
-  }
+  text(currentEinheit.get(languages[1]).text, einheitenFelder[1].x, einheitenFelder[1].y, einheitenFelder[1].width, einheitenFelder[1].height);
 }
 
 
