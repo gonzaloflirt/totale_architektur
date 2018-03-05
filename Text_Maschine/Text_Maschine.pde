@@ -1,3 +1,5 @@
+import processing.io.*;
+
 import netP5.*;
 import oscP5.*;
 
@@ -40,8 +42,14 @@ boolean isRecording = false;
 boolean hasStateChanged = true;
 
 HashMap<Character, Integer> keyIdMapping;
+HashMap<Integer, Integer> buttonIdMapping;
+int[] ports = {5};
 
 void setup() {
+  for (int port : ports) {
+    GPIO.pinMode(port, GPIO.INPUT);
+  }
+
   keyIdMapping = new HashMap<Character, Integer>();
   keyIdMapping.put('q', 0);
   keyIdMapping.put('w', 1);
@@ -61,6 +69,25 @@ void setup() {
   keyIdMapping.put('v', 13);
   keyIdMapping.put('b', 14);
   
+  buttonIdMapping = new HashMap<Integer, Integer>();
+  buttonIdMapping.put(0, 0);
+  buttonIdMapping.put(1, 1);
+  buttonIdMapping.put(2, 2);
+  buttonIdMapping.put(3, 3);
+  buttonIdMapping.put(4, 4);
+
+  buttonIdMapping.put(5, 5);
+  buttonIdMapping.put(6, 6);
+  buttonIdMapping.put(7, 7);
+  buttonIdMapping.put(8, 8);
+  buttonIdMapping.put(9, 9);
+
+  buttonIdMapping.put(10, 10);
+  buttonIdMapping.put(11, 11);
+  buttonIdMapping.put(12, 12);
+  buttonIdMapping.put(13, 13);
+  buttonIdMapping.put(14, 14);
+
   String dataPath = sketchPath() + "/texte/";
   String fontDir = sketchPath() + "/gnu-freefont_freeserif/";
   languages = new String[]{"DE", "EN"};
@@ -96,6 +123,19 @@ void setup() {
 }
 
 void draw() {
+  if (keyPressed == false) {
+    for (int port : ports) {
+      if (!isRecording && GPIO.digitalRead(port) == GPIO.HIGH) {
+          buttonPressed(buttonIdMapping.get(port));
+          isRecording = true;
+          hasStateChanged = true;
+      } else if (isRecording && GPIO.digitalRead(port) == GPIO.LOW) {
+          buttonReleased(buttonIdMapping.get(port));
+          isRecording = false;
+          hasStateChanged = true;
+      }
+    }
+  }
   if (hasStateChanged)
   {
     background(backgroundColor);
@@ -152,20 +192,29 @@ void drawCurrentEinheit() {
 
 void keyPressed() {
   if (!isRecording && keyIdMapping.containsKey(key)) {
-    int id = keyIdMapping.get(key);
-    currentEinheit = einheiten[id];
-    OscMessage message = new OscMessage(oscStartRecordingPath);
-    message.add(id);
-    osc.send(message, receiver);
+    buttonPressed(keyIdMapping.get(key));
     isRecording = true;
     hasStateChanged = true;
   }
 }
 
 void keyReleased() {
-  if (isRecording && keyIdMapping.containsKey(key) && getId(einheiten, currentEinheit) == keyIdMapping.get(key)) {
+  if (isRecording && keyIdMapping.containsKey(key)) {
+    buttonReleased(keyIdMapping.get(key));
     isRecording = false;
     hasStateChanged = true;
+  }
+}
+
+void buttonPressed(int id) {
+  currentEinheit = einheiten[id];
+  OscMessage message = new OscMessage(oscStartRecordingPath);
+  message.add(id);
+  osc.send(message, receiver);
+}
+
+void buttonReleased(int id) {
+  if (id == getId(einheiten, currentEinheit)) {
     OscMessage message = new OscMessage(oscStopRecordingPath);
     osc.send(message, receiver);
   }
