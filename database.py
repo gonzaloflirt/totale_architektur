@@ -16,6 +16,8 @@ class database:
             '''CREATE TABLE IF NOT EXISTS sums (einheit, path)''')
         db.execute(
             '''CREATE TABLE IF NOT EXISTS recs (path)''')
+        db.execute(
+            '''CREATE TABLE IF NOT EXISTS dailies (date STRING UNIQUE, path)''')
         return db
 
     @staticmethod
@@ -57,6 +59,15 @@ class database:
     def writeRec(path):
         db = database.connect()
         db.execute('''INSERT OR REPLACE INTO recs (path) VALUES (?)''', [path])
+        db.commit()
+        db.close()
+
+    @staticmethod
+    def writeDaily(date, path):
+        db = database.connect()
+        db.execute(
+            '''INSERT OR REPLACE INTO dailies (date, path) VALUES (?, ?)''',
+            [date, path])
         db.commit()
         db.close()
 
@@ -110,3 +121,14 @@ class database:
             return []
         else:
             return [path[0] for path in daten]
+
+    @staticmethod
+    def readDaily(date):
+        db = database.connect()
+        entry = db.execute('''SELECT path FROM dailies WHERE (date IS ?)''', [date])
+        daten = entry.fetchone()
+        db.close()
+        if daten is None:
+            return None
+        else:
+            return daten[0]

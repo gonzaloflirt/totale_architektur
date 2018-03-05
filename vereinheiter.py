@@ -6,6 +6,35 @@ from pythonosc import udp_client
 from random import randint
 from database import *
 
+def date():
+    return datetime.datetime.now().strftime("%Y-%m-%d")
+
+def daily():
+    daily = AudioSegment.silent(100)
+    for einheit in range(1, 16):
+        [clips, sums] = database.readEinheit(einheit)
+        if len(clips) > 0:
+            audio = [AudioSegment.from_wav(clip) for clip in clips]
+            for sum in [AudioSegment.from_wav(sum) for sum in sums]:
+                audio.append(sum - 3)
+            duration = max([len(clip) for clip in audio])
+            result = AudioSegment.silent(duration = duration)
+            for clip in audio:
+                result = result.overlay(clip - 24, position = randint(0, duration - len(clip)))
+            result = effects.normalize(result)
+            result = result.remove_dc_offset()
+            daily = daily.append(result)
+    name = os.path.join(dailiesDir, datetime.datetime.now().isoformat())
+    daily.export(name + '.wav', format = 'wav')
+    daily.export(name + '.mp3', format = 'mp3', bitrate="128k")
+    print('new daily:', name + '.mp3')
+    database.writeDaily(date(), (name + '.wav'))
+
+def updateDailies():
+    cur = database.readDaily(date())
+    if cur is None:
+        daily()
+
 def newRecordings():
     files = [file for file in os.listdir(recordingsDir)
         if (os.path.isfile(os.path.join(recordingsDir, file)))]
@@ -108,12 +137,16 @@ if not os.path.exists(clipsDir):
 sumsDir = os.path.realpath(config.get('vereinheiter', 'sumsDir'))
 if not os.path.exists(sumsDir):
     os.makedirs(sumsDir)
+dailiesDir = os.path.realpath(config.get('vereinheiter', 'dailiesDir'))
+if not os.path.exists(dailiesDir):
+    os.makedirs(dailiesDir)
 oscClient = udp_client.SimpleUDPClient(
     config.get('vereinheiter', 'scIP'),
     config.getint('vereinheiter', 'scPort'))
 
 try:
     while True:
+        updateDailies()
         updateDatabase()
         setSCVolume()
         time.sleep(1)
