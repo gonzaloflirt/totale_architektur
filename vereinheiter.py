@@ -120,7 +120,7 @@ def setSCVolume():
     dayStart = config.getint('vereinheiter', 'dayStart')
     dayEnd = config.getint('vereinheiter', 'dayEnd')
     currentHour = int(datetime.datetime.now().strftime("%H"))
-    if currentHour > dayStart and currentHour <= dayEnd:
+    if currentHour > dayStart and currentHour < dayEnd:
         volume = config.getint('vereinheiter', 'dayVolume')
     else:
         volume = config.getint('vereinheiter', 'nightVolume')
