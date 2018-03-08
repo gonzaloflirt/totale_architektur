@@ -6,6 +6,8 @@ e = ();
 e.numSpeakers = 5;
 e.numEinheiten = 15;
 e.sumsVolume = -3;
+e.emptyBucketChance = [0.1, 0.9];
+e.emptyBucketWaitRange = [0.01, 1.5];
 e.dataDir = Document.current.dir +/+ 'data';
 s.options.outDevice = 'Built-in Output';
 
@@ -13,15 +15,14 @@ s.options.outDevice = 'Built-in Output';
 
 s.options.numOutputBusChannels = e.numSpeakers;
 s.options.numInputBusChannels = 0;
+s.options.numBuffers = 2048;
 e.buffers = ();
 e.buffers.clips = ();
 e.buffers.sums = ();
-e.einheit = Pseq((1..e.numEinheiten), inf).asStream;
-e.form  = Pseq([\blockig, \fliessend], inf).asStream;
 
 e.readEinheit = {{ |einheit|
 	var data, clips, sums;
-	data = (Document.current.dir +/+ 'einheit2sc.py' + einheit).unixCmdGetStdOut;
+	data = (Document.current.dir +/+ 'database2sc.py e' + einheit).unixCmdGetStdOut;
 	data = data.stripWhiteSpace.replace("\n", "").interpret;
 	clips = data[0];
 	sums = data[1];
@@ -45,6 +46,34 @@ e.readEinheit = {{ |einheit|
 	});
 }};
 
+e.emptyBucket = {{
+	|einheit|
+	var clips = (Document.current.dir +/+ 'database2sc.py c' + einheit).unixCmdGetStdOut();
+	clips = (clips.stripWhiteSpace.replace("\n", "")).interpret;
+	clips = clips.scramble[0..1000];
+	postln("empty bucket" + einheit);
+	if (clips.size() > 0, {
+		var buffers, durations, channels;
+		buffers = clips.collect({|path| Buffer.read(s, path) });
+		s.sync;
+		durations = buffers.collect({ |b| b.duration(); });
+		channels = Pxrand((0..e.numSpeakers-1), inf).asStream;
+		buffers.do { |buffer, i|
+			var wait = exprand(e.emptyBucketWaitRange[0], e.emptyBucketWaitRange[1]);
+			(0..i).do{ |j|
+				if (j < i, {durations[j] = durations[j] - wait});
+			};
+			Synth(\blockig, [
+				\bufnum, buffer.bufnum,
+				\channel, channels.next
+			]);
+			wait.wait;
+		};
+		{buffers.collect({|buffer| buffer.free(); })}.defer(durations.maxItem);
+		durations.maxItem.wait;
+	});
+}};
+
 e.playClips = {{
 	|buffers, duration|
 	var form = e.form.next;
@@ -55,7 +84,7 @@ e.playClips = {{
 	buffers.scramble.collect({
 		|b, i|
 		var defer = rrand(0, duration - b.duration());
-		Synth.new(form, [
+		Synth(form, [
 			\bufnum, b.bufnum,
 			\defer, defer,
 			\channel, channel[i],
@@ -71,7 +100,7 @@ e.playSums = {{
 	buffers.collect({
 		|b, i|
 		var defer = rrand(0, duration - b.duration());
-		Synth.new(\blockig, [
+		Synth(\blockig, [
 			\bufnum, b.bufnum,
 			\defer, defer,
 			\channel, channels[i],
@@ -81,9 +110,21 @@ e.playSums = {{
 }};
 
 e.playEinheit = {{
-	|einheit, duration|
-	e.playClips.value(e.buffers.clips[einheit], duration);
-	e.playSums.value(e.buffers.sums[einheit], duration);
+	|einheit|
+	e.readEinheit.value(einheit);
+	s.sync;
+	if (e.buffers.clips[einheit].notNil, {
+		var clipsDuration = e.buffers.clips[einheit].collect({ |b| b.duration(); });
+		var sumsDuration = e.buffers.sums[einheit].collect({ |b| b.duration(); });
+		var duration = (clipsDuration.addAll(sumsDuration)).maxItem;
+		postln("play einheit " + einheit + " with duration " + duration);
+		e.playClips.value(e.buffers.clips[einheit], duration);
+		e.playSums.value(e.buffers.sums[einheit], duration);
+		wait(duration);
+	}, {
+		postln("noop einheit " + einheit);
+		0.001.wait;
+	});
 }};
 
 s.waitForBoot{
@@ -115,28 +156,21 @@ s.waitForBoot{
 
 	Synth(\limiter);
 
-	Tdef(\play, { loop {
-		var einheit = e.einheit.next;
-		e.readEinheit.value(einheit);
-		s.sync;
-		if (e.buffers.clips[einheit].notNil, {
-			var clipsDuration = e.buffers.clips[einheit].collect({ |b| b.duration(); });
-			var sumsDuration = e.buffers.sums[einheit].collect({ |b| b.duration(); });
-			var duration = (clipsDuration.addAll(sumsDuration)).maxItem;
-			postln("play einheit " + einheit + " with duration " + duration);
-			e.playEinheit.value(einheit, duration);
-			wait(duration + 1);
-		}, {
-			postln("noop einheit " + einheit);
-			0.001.wait;
-		});
+	e.einheit = Pseq((1..e.numEinheiten), inf).asStream;
+	e.form  = Pseq([\blockig, \fliessend], inf).asStream;
+	e.playSequence = Pwrand([e.emptyBucket, e.playEinheit], e.emptyBucketChance, inf).asStream;
+
+	Synth(\limiter);
+
+	Tdef(\main, { loop {
+		e.playSequence.next.value(e.einheit.next);
 	}}).play;
 
 	OSCdef(\volume, {|msg| s.volume = msg[1]; }, '/volume')
 }
 )
 
-Tdef(\play).stop;
+Tdef(\main).stop;
 
 Ndef(\stereoMixdown, {
 	ReplaceOut.ar(0, Splay.ar(In.ar(0, e.numSpeakers)));
