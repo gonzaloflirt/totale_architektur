@@ -102,8 +102,16 @@ s.waitForBoot{
 		Out.ar(0, sig);
 	}).add;
 
+	SynthDef(\limiter, {
+		|level = 1, dur = 0.1|
+		var sig = In.ar(0, e.numSpeakers);
+		ReplaceOut.ar(0, Limiter.ar(sig, level, dur));
+	}).add;
+
 	s.sync;
 	s.meter;
+
+	Synth(\limiter);
 
 	Tdef(\play, { loop {
 		var einheit = e.einheit.next;
