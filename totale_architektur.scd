@@ -20,9 +20,11 @@ e.einheit = Pseq((1..e.numEinheiten), inf).asStream;
 e.form  = Pseq([\blockig, \fliessend], inf).asStream;
 
 e.readEinheit = {{ |einheit|
-	var data = (Document.current.dir +/+ 'einheit2sc.py' + einheit).unixCmdGetStdOut.interpret;
-	var clips = data[0];
-	var sums = data[1];
+	var data, clips, sums;
+	data = (Document.current.dir +/+ 'einheit2sc.py' + einheit).unixCmdGetStdOut;
+	data = data.stripWhiteSpace.replace("\n", "").interpret;
+	clips = data[0];
+	sums = data[1];
 	if (e.buffers.clips[einheit].notNil, {
 		e.buffers.clips[einheit].collect({|buffer| buffer.free()});
 	});
