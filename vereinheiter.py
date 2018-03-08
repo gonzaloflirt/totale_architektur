@@ -20,7 +20,7 @@ def daily():
             duration = max([len(clip) for clip in audio])
             result = AudioSegment.silent(duration = duration)
             for clip in audio:
-                result = result.overlay(clip - 24, position = randint(0, duration - len(clip)))
+                result = result.overlay(clip - 30, position = randint(0, duration - len(clip)))
             result = effects.normalize(result)
             result = result.remove_dc_offset()
             daily = daily.append(result)
