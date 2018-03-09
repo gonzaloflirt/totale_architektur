@@ -97,7 +97,7 @@ void setup() {
   String fontDir = sketchPath() + "/gnu-freefont_freeserif/";
   languages = new String[]{"DE", "EN"};
   try {
-    welcome = getWelcomeMessage(dataPath, languages);
+    welcome = getText(dataPath, "Welcome.txt", languages);
     einheiten = getEinheiten(dataPath, languages);
   } catch(Exception e) {
     println("Error reading Einheiten files: " + e.getMessage());
