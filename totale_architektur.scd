@@ -48,28 +48,30 @@ e.readEinheit = {{ |einheit|
 
 e.emptyBucket = {{
 	|einheit|
-	var clips = (Document.current.dir +/+ 'database2sc.py c' + einheit).unixCmdGetStdOut();
+	var clips, channels, durations;
+	clips = (Document.current.dir +/+ 'database2sc.py c' + einheit).unixCmdGetStdOut();
 	clips = (clips.stripWhiteSpace.replace("\n", "")).interpret;
 	clips = clips.scramble[0..1000];
+	channels = Pxrand((0..e.numSpeakers-1), inf).asStream;
+	durations = 0 ! clips.size();
 	postln("empty bucket" + einheit);
-	if (clips.size() > 0, {
-		var buffers, durations, channels;
-		buffers = clips.collect({|path| Buffer.read(s, path) });
+	clips.do {
+		|path, i|
+		var buffer = Buffer.read(s, path);
+		var wait = exprand(e.emptyBucketWaitRange[0], e.emptyBucketWaitRange[1]);
 		s.sync;
-		durations = buffers.collect({ |b| b.duration(); });
-		channels = Pxrand((0..e.numSpeakers-1), inf).asStream;
-		buffers.do { |buffer, i|
-			var wait = exprand(e.emptyBucketWaitRange[0], e.emptyBucketWaitRange[1]);
-			(0..i).do{ |j|
-				if (j < i, {durations[j] = durations[j] - wait});
-			};
-			Synth(\blockig, [
-				\bufnum, buffer.bufnum,
-				\channel, channels.next
-			]);
-			wait.wait;
+		(0..i).do { |j|
+			durations[j] = durations[j] - wait;
 		};
-		{buffers.collect({|buffer| buffer.free(); })}.defer(durations.maxItem);
+		durations[i] = buffer.duration;
+		Synth(\blockig, [
+			\bufnum, buffer.bufnum,
+			\channel, channels.next
+		]);
+		{ buffer.free(); }.defer(buffer.duration + 1);
+		wait.wait;
+	};
+	if (durations.size > 0, {
 		durations.maxItem.wait;
 	});
 }};
