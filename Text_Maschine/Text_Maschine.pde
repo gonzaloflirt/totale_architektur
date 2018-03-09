@@ -19,7 +19,7 @@ int vSpace = 10;
 int textFeldWidth = 0;
 int feldHeight = 0;
 int langWidth = 120;
-Feld[] introductionFelder;
+Feld[] welcomeFelder;
 Feld[] languageFelder;
 Feld[] einheitenFelder;
 
@@ -32,7 +32,7 @@ int backgroundColor = 245;
 int textColor0 = 100;
 int textColor1 = 50;
 
-StringDict introduction;
+StringDict welcome;
 Einheit[] einheiten;
 StringList names;
 String[] languages;
@@ -97,7 +97,7 @@ void setup() {
   String fontDir = sketchPath() + "/gnu-freefont_freeserif/";
   languages = new String[]{"DE", "EN"};
   try {
-    introduction = getIntroduction(dataPath, languages);
+    welcome = getWelcomeMessage(dataPath, languages);
     einheiten = getEinheiten(dataPath, languages);
   } catch(Exception e) {
     println("Error reading Einheiten files: " + e.getMessage());
@@ -115,7 +115,7 @@ void setup() {
   textFeldWidth = width - langWidth - 3 * hSpace;
   feldHeight = (height / 2) - 2 * vSpace;
   
-  introductionFelder = new Feld[]{new Feld(hSpace, vSpace, width - 2 * hSpace, feldHeight), new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight)};
+  welcomeFelder = new Feld[]{new Feld(hSpace, vSpace, width - 2 * hSpace, feldHeight), new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight)};
   languageFelder = new Feld[]{new Feld(hSpace, vSpace, langWidth, feldHeight), new Feld(hSpace, (height / 2) + vSpace, langWidth, feldHeight)};
   if (showLanguageIndicator) {
     einheitenFelder = new Feld[]{new Feld(langWidth + 2 * hSpace, vSpace, textFeldWidth,  feldHeight), new Feld(langWidth + 2 * hSpace, (height / 2) + vSpace, textFeldWidth,  feldHeight)};
@@ -157,22 +157,22 @@ void draw() {
       }
     }
     else if (!isRecording) {
-      drawIntroduction();
+      drawWelcome();
     }
     hasStateChanged = false;
   }
 }
 
-void drawIntroduction() {
+void drawWelcome() {
   textFont(font[0]);
   textSize(languageFontSize);
   textAlign(CENTER, CENTER);
   fill(textColor0);
-  text(introduction.get(languages[0]), introductionFelder[0].x, introductionFelder[0].y, introductionFelder[0].width, introductionFelder[0].height);
+  text(welcome.get(languages[0]), welcomeFelder[0].x, welcomeFelder[0].y, welcomeFelder[0].width, welcomeFelder[0].height);
   textFont(font[0]);
   textSize(languageFontSize);
   fill(textColor1);
-  text(introduction.get(languages[1]), introductionFelder[1].x, introductionFelder[1].y, introductionFelder[1].width, introductionFelder[1].height);
+  text(welcome.get(languages[1]), welcomeFelder[1].x, welcomeFelder[1].y, welcomeFelder[1].width, welcomeFelder[1].height);
 }
 
 void drawLanguage() {

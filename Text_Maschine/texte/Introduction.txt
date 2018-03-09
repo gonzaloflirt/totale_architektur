@@ -1,2 +1,0 @@
-DE@Wähle einen Bauhäusler.
-EN@Select a Bauhäusler.
