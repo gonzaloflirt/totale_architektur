@@ -50,7 +50,7 @@ class Recorder:
             frames.export(os.path.join(dataDir, filename) + '.wav', format = 'wav')
             print('wrote', filename, 'duration:', frames.duration_seconds, 'seconds')
             syncTarget = config.get('recorder', 'rsyncTarget')
-            os.system('rsync -avrz {} {}'.format(dataDir, syncTarget))
+            os.system('rsync -avrz {}/*.wav {}'.format(dataDir, syncTarget))
         else:
             print('canceled recording', filename)
 
