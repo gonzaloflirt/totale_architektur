@@ -157,6 +157,8 @@ void draw() {
       isCancelButtonPressed = true;
     } else if (isCancelButtonPressed && GPIO.digitalRead(cancelPort) == GPIO.LOW) {
       isCancelButtonPressed = false;
+      currentState = State.WELCOME;
+      hasStateChanged = true;
     }
   }
   if (hasStateChanged)
@@ -247,6 +249,8 @@ void keyReleased() {
   if (isCancelButtonPressed && cancelKey == key) {
     isCancelButtonPressed = false;
     isKeyPressed = false;
+    currentState = State.WELCOME;
+    hasStateChanged = true;
   }
 }
 
