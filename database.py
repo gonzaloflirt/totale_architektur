@@ -1,4 +1,4 @@
-import configparser, os, sqlite3
+import configparser, os, sqlite3, sqlitebck
 
 class database:
     @staticmethod
@@ -132,3 +132,18 @@ class database:
             return None
         else:
             return daten[0]
+
+    @staticmethod
+    def backup(filename):
+        db = database.connect()
+        filePath = os.path.dirname(os.path.realpath(__file__))
+        config = configparser.ConfigParser()
+        config.read(os.path.join(filePath, 'totale_architektur.config'))
+        path = os.path.join(filePath, config.get('database', 'backupDir'))
+        if not os.path.exists(path):
+            os.makedirs(path)
+        path = os.path.join(path, filename)
+        backup = sqlite3.connect(path)
+        sqlitebck.copy(db, backup)
+        db.close()
+        backup.close()

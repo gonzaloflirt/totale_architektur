@@ -3,7 +3,7 @@
 Tools for a sound installation
 
 ### Dependencies
-- Python3 with pyaudio pydub python-osc installed
+- Python3 with pyaudio, pydub, python-osc, and sqlitebck installed
 - SuperCollider
 
 ### Modules

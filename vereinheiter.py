@@ -30,9 +30,10 @@ def daily():
     print('new daily:', name + '.mp3')
     database.writeDaily(date(), (name + '.wav'))
 
-def updateDailies():
+def dailyJob():
     cur = database.readDaily(date())
     if cur is None:
+        database.backup(date() + '.db')
         daily()
 
 def newRecordings():
@@ -146,7 +147,7 @@ oscClient = udp_client.SimpleUDPClient(
 
 try:
     while True:
-        updateDailies()
+        dailyJob()
         updateDatabase()
         setSCVolume()
         time.sleep(1)
