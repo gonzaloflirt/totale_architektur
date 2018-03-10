@@ -51,7 +51,7 @@ e.emptyBucket = {{
 	var clips, channels, durations;
 	clips = (Document.current.dir +/+ 'database2sc.py c' + einheit).unixCmdGetStdOut();
 	clips = (clips.stripWhiteSpace.replace("\n", "")).interpret;
-	clips = clips.scramble[0..1000];
+	clips = clips.scramble;
 	channels = Pxrand((0..e.numSpeakers-1), inf).asStream;
 	durations = 0 ! clips.size();
 	postln("empty bucket" + einheit);
