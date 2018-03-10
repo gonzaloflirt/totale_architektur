@@ -51,10 +51,10 @@ e.emptyBucket = {{
 	var clips, channels, durations;
 	clips = (Document.current.dir +/+ 'database2sc.py c' + einheit).unixCmdGetStdOut();
 	clips = (clips.stripWhiteSpace.replace("\n", "")).interpret;
-	clips = clips.scramble;
+	clips = clips.scramble[0..1000];
 	channels = Pxrand((0..e.numSpeakers-1), inf).asStream;
 	durations = 0 ! clips.size();
-	postln("empty bucket" + einheit);
+	postln("empty bucket" + einheit ++ "," + clips.size() + "clips");
 	clips.do {
 		|path, i|
 		var buffer = Buffer.read(s, path);
@@ -119,7 +119,7 @@ e.playEinheit = {{
 		var clipsDuration = e.buffers.clips[einheit].collect({ |b| b.duration(); });
 		var sumsDuration = e.buffers.sums[einheit].collect({ |b| b.duration(); });
 		var duration = (clipsDuration.addAll(sumsDuration)).maxItem;
-		postln("play einheit " + einheit + " with duration " + duration);
+		postln("play einheit" + einheit ++ "," + "duration" + duration ++ "," + e.buffers.clips[einheit].size() + "clips");
 		e.playClips.value(e.buffers.clips[einheit], duration);
 		e.playSums.value(e.buffers.sums[einheit], duration);
 		wait(duration);
