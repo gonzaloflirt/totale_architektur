@@ -18,6 +18,7 @@ class Recorder:
         sampleRate = config.getint('recorder', 'samplerate')
         frameSize = config.getint('recorder', 'framesize')
         deviceIndex = config.getint('recorder', 'deviceIndex')
+        maxDuration = config.getint('recorder', 'maxDuration') * 1000
         filename = str(self.einheit) + '_' + datetime.datetime.now().isoformat()
         print('recording {} ...'.format(filename))
         audio = pyaudio.PyAudio()
@@ -33,6 +34,8 @@ class Recorder:
         while self.recording and not self.canceled:
             frames += AudioSegment(
                 stream.read(frameSize), sample_width=2, frame_rate = sampleRate, channels=1)
+            if len(frames) > maxDuration:
+                self.canceled = True
         stream.stop_stream()
         stream.close()
         audio.terminate()
