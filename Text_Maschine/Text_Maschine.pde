@@ -26,11 +26,11 @@ Feld[] einheitenFelder;
 PFont[] fontLang;
 PFont[] font;
 
-int languageFontSize = 50;
+int languageFontSize = 45;
 int einheitenFontSize = 35;
 int backgroundColor = 245;
-int textColor0 = 100;
-int textColor1 = 50;
+int textColor0 = 50;
+int textColor1 = 80;
 
 StringDict welcome;
 StringDict goodbye;
@@ -211,12 +211,12 @@ void drawCurrentEinheit() {
   textFont(font[0]);
   textSize(einheitenFontSize);
   textAlign(LEFT, TOP);
-  fill(textColor1);
+  fill(textColor0);
   text(currentEinheit.get(languages[0]).text, einheitenFelder[0].x, einheitenFelder[0].y, einheitenFelder[0].width, einheitenFelder[0].height);
 
   textFont(font[0]);
   textSize(einheitenFontSize);
-  fill(textColor0);
+  fill(textColor1);
   text(currentEinheit.get(languages[1]).text, einheitenFelder[1].x, einheitenFelder[1].y, einheitenFelder[1].width, einheitenFelder[1].height);
 }
 
