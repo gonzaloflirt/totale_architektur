@@ -65,6 +65,7 @@ def createClipFromRecording(fileName):
         if len(chunk) > 100:
             chunk = chunk.fade_in(100)
             chunk = chunk.fade_out(100)
+            frames = frames.append(AudioSegment.silent(250))
             frames = frames.append(chunk)
     frames = effects.compress_dynamic_range(
         frames, threshold = treshold, ratio = ratio, attack = attack, release = release)
