@@ -3,10 +3,10 @@ e = ();
 
 // SETTINGS //////////////////////////////////////////////////////////////////////////////
 
-e.numSpeakers = 5;
+e.numSpeakers = 22;
 e.numEinheiten = 15;
-e.sumsVolume = -3;
-e.emptyBucketChance = [0.1, 0.9];
+e.sumsVolume = -24;
+e.emptyBucketChance = [0.05, 0.95];
 e.emptyBucketWaitRange = [0.01, 1.5];
 e.dataDir = Document.current.dir +/+ 'data';
 s.options.outDevice = 'Built-in Output';
