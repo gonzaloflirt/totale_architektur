@@ -19,7 +19,7 @@ int vSpace = 10;
 int textFeldWidth = 0;
 int feldHeight = 0;
 int langWidth = 120;
-Feld[] welcomeFelder;
+Feld[] messageFelder;
 Feld[] languageFelder;
 Feld[] einheitenFelder;
 
@@ -33,15 +33,24 @@ int textColor0 = 100;
 int textColor1 = 50;
 
 StringDict welcome;
+StringDict goodbye;
 Einheit[] einheiten;
 StringList names;
 String[] languages;
 
 Einheit currentEinheit;
 
-boolean isRecording = false;
 boolean hasStateChanged = true;
 boolean isCancelButtonPressed = false;
+enum State {
+  RECORDING,
+  WELCOME,
+  GOODBYE;
+}
+
+State currentState = State.WELCOME;
+int goodbyeTime = 0;
+int goodbyeThreshold = 5000;
 
 HashMap<Character, Integer> keyIdMapping;
 HashMap<Integer, Integer> buttonIdMapping;
@@ -98,6 +107,7 @@ void setup() {
   languages = new String[]{"DE", "EN"};
   try {
     welcome = getText(dataPath, "Welcome.txt", languages);
+    goodbye = getText(dataPath, "Goodbye.txt", languages);
     einheiten = getEinheiten(dataPath, languages);
   } catch(Exception e) {
     println("Error reading Einheiten files: " + e.getMessage());
@@ -115,7 +125,7 @@ void setup() {
   textFeldWidth = width - langWidth - 3 * hSpace;
   feldHeight = (height / 2) - 2 * vSpace;
   
-  welcomeFelder = new Feld[]{new Feld(hSpace, vSpace, width - 2 * hSpace, feldHeight), new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight)};
+  messageFelder = new Feld[]{new Feld(hSpace, vSpace, width - 2 * hSpace, feldHeight), new Feld(hSpace, (height / 2), width - 2 * hSpace, feldHeight)};
   languageFelder = new Feld[]{new Feld(hSpace, vSpace, langWidth, feldHeight), new Feld(hSpace, (height / 2) + vSpace, langWidth, feldHeight)};
   if (showLanguageIndicator) {
     einheitenFelder = new Feld[]{new Feld(langWidth + 2 * hSpace, vSpace, textFeldWidth,  feldHeight), new Feld(langWidth + 2 * hSpace, (height / 2) + vSpace, textFeldWidth,  feldHeight)};
@@ -130,14 +140,15 @@ void setup() {
 void draw() {
   if (keyPressed == false) {
     for (int port : ports) {
-      if (!isRecording && GPIO.digitalRead(port) == GPIO.HIGH) {
+      if (currentState == State.WELCOME && GPIO.digitalRead(port) == GPIO.HIGH) {
           buttonPressed(buttonIdMapping.get(port));
-          isRecording = true;
           hasStateChanged = true;
-      } else if (isRecording && GPIO.digitalRead(port) == GPIO.LOW) {
+          currentState = State.RECORDING;
+      } else if (currentState == State.RECORDING && GPIO.digitalRead(port) == GPIO.LOW) {
           buttonReleased(buttonIdMapping.get(port));
-          isRecording = false;
+          currentState = State.GOODBYE;
           hasStateChanged = true;
+          goodbyeTime = millis() + goodbyeThreshold;
       }
     }
     if (!isCancelButtonPressed && GPIO.digitalRead(cancelPort) == GPIO.HIGH) {
@@ -150,29 +161,38 @@ void draw() {
   if (hasStateChanged)
   {
     background(backgroundColor);
-    if (isRecording) {
+    if (currentState == State.RECORDING) {
       drawCurrentEinheit();
       if (showLanguageIndicator) {
         drawLanguage();
       }
+      hasStateChanged = false;
     }
-    else if (!isRecording) {
-      drawWelcome();
+    else if (currentState == State.WELCOME) {
+      drawMessage(welcome);
+      hasStateChanged = false;
     }
-    hasStateChanged = false;
+    else if (currentState == State.GOODBYE) {
+      if (millis() < goodbyeTime) {
+        drawMessage(goodbye);
+      } else {
+        currentState = State.WELCOME;
+        hasStateChanged = true;
+      }
+    }
   }
 }
 
-void drawWelcome() {
+void drawMessage(StringDict message) {
   textFont(font[0]);
   textSize(languageFontSize);
   textAlign(CENTER, CENTER);
   fill(textColor0);
-  text(welcome.get(languages[0]), welcomeFelder[0].x, welcomeFelder[0].y, welcomeFelder[0].width, welcomeFelder[0].height);
+  text(message.get(languages[0]), messageFelder[0].x, messageFelder[0].y, messageFelder[0].width, messageFelder[0].height);
   textFont(font[0]);
   textSize(languageFontSize);
   fill(textColor1);
-  text(welcome.get(languages[1]), welcomeFelder[1].x, welcomeFelder[1].y, welcomeFelder[1].width, welcomeFelder[1].height);
+  text(message.get(languages[1]), messageFelder[1].x, messageFelder[1].y, messageFelder[1].width, messageFelder[1].height);
 }
 
 void drawLanguage() {
@@ -202,9 +222,9 @@ void drawCurrentEinheit() {
 
 
 void keyPressed() {
-  if (!isRecording && keyIdMapping.containsKey(key)) {
+  if (currentState == State.WELCOME && keyIdMapping.containsKey(key)) {
     buttonPressed(keyIdMapping.get(key));
-    isRecording = true;
+    currentState = State.RECORDING;
     hasStateChanged = true;
   }
   if (!isCancelButtonPressed && cancelKey == key) {
@@ -214,9 +234,10 @@ void keyPressed() {
 }
 
 void keyReleased() {
-  if (isRecording && keyIdMapping.containsKey(key)) {
+  if (currentState == State.RECORDING && keyIdMapping.containsKey(key)) {
     buttonReleased(keyIdMapping.get(key));
-    isRecording = false;
+    currentState = State.GOODBYE;
+    goodbyeTime = millis() + goodbyeThreshold;
     hasStateChanged = true;
   }
   if (isCancelButtonPressed && cancelKey == key) {
