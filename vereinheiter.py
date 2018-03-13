@@ -24,7 +24,7 @@ def daily():
             result = effects.normalize(result)
             result = result.remove_dc_offset()
             daily = daily.append(result)
-    name = os.path.join(dailiesDir, datetime.datetime.now().isoformat())
+    name = os.path.join(dailiesDir, date())
     daily.export(name + '.wav', format = 'wav')
     daily.export(name + '.mp3', format = 'mp3', bitrate="128k")
     print('new daily:', name + '.mp3')
