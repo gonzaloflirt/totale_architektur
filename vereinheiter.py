@@ -9,19 +9,37 @@ from database import *
 def date():
     return datetime.datetime.now().strftime("%Y-%m-%d")
 
+def panClips(clips):
+    numClips = len(clips)
+    if numClips == 0:
+        return []
+    elif numClips == 1:
+        return [clips[0].pan(0)]
+    else:
+        diff = 2 / (numClips - 1)
+        pos = [-1 + (i * diff) for i in range(0, numClips)]
+        result = []
+        for i in range(0, numClips):
+            clips[i] = clips[i].pan(pos[i])
+        return clips
+
 def daily():
+    sumAttenuation = config.getint('vereinheiter', 'dailiesSumAttenuation')
+    print(sumAttenuation)
     daily = AudioSegment.silent(100)
     for einheit in range(1, 16):
         [clips, sums] = database.readEinheit(einheit)
         if len(clips) > 0:
             audio = [AudioSegment.from_wav(clip) for clip in clips]
-            for sum in [AudioSegment.from_wav(sum) for sum in sums]:
-                audio.append(sum - 3)
+            audio = panClips(audio)
+            sumsAudio = [AudioSegment.from_wav(sum) for sum in sums]
+            sumsAudio = panClips(sumsAudio)
+            [audio.append(sum - sumAttenuation) for sum in sumsAudio]
             duration = max([len(clip) for clip in audio])
             result = AudioSegment.silent(duration = duration)
             for clip in audio:
                 result = result.overlay(clip - 30, position = randint(0, duration - len(clip)))
-            result = effects.normalize(result)
+            result = effects.normalize(result, 0.5)
             result = result.remove_dc_offset()
             daily = daily.append(result)
     name = os.path.join(dailiesDir, date())
