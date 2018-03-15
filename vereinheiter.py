@@ -25,7 +25,6 @@ def panClips(clips):
 
 def daily():
     sumAttenuation = config.getint('vereinheiter', 'dailiesSumAttenuation')
-    print(sumAttenuation)
     daily = AudioSegment.silent(100)
     for einheit in range(1, 16):
         [clips, sums] = database.readEinheit(einheit)
@@ -42,11 +41,13 @@ def daily():
             result = effects.normalize(result, 0.5)
             result = result.remove_dc_offset()
             daily = daily.append(result)
-    name = os.path.join(dailiesDir, date())
-    daily.export(name + '.wav', format = 'wav')
-    daily.export(name + '.mp3', format = 'mp3', bitrate="128k")
-    print('new daily:', name + '.mp3')
-    database.writeDaily(date(), (name + '.wav'))
+    if len(daily) > 100:
+        name = os.path.join(dailiesDir, date())
+        daily.export(name + '.wav', format = 'wav')
+        daily.export(name + '.mp3', format = 'mp3', bitrate="128k")
+        database.writeDaily(date(), (name + '.wav'))
+        os.system(config.get('vereinheiter', 'dailiesSyncCmd'))
+        print('new daily:', name + '.mp3')
 
 def dailyJob():
     cur = database.readDaily(date())
