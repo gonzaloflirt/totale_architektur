@@ -10,6 +10,7 @@ e.fliessendVolume = 0;
 e.sumsVolume = -24;
 e.emptyBucketChance = [0.05, 0.95];
 e.emptyBucketWaitRange = [0.01, 1.5];
+e.emptySceneWait = 0.01;
 e.dataDir = Document.current.dir +/+ 'data';
 s.options.outDevice = 'Built-in Output';
 
@@ -141,7 +142,7 @@ e.playEinheit = {{
 		wait(duration);
 	}, {
 		postln("noop einheit " + einheit);
-		0.001.wait;
+		e.emptySceneWait.wait;
 	});
 }};
 
