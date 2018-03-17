@@ -6,6 +6,8 @@ e = ();
 e.numSpeakers = 22;
 e.numEinheiten = 15;
 e.blockigVolume = -3;
+e.fliessendVolume = 0;
+e.sumsVolume = -24;
 e.emptyBucketChance = [0.05, 0.95];
 e.emptyBucketWaitRange = [0.01, 1.5];
 e.dataDir = Document.current.dir +/+ 'data';
@@ -90,6 +92,7 @@ e.playClips = {{
 					\bufnum, buffer.bufnum,
 					\defer, defers[index],
 					\channel, channel,
+					\vol, e.blockigVolume
 				]);
 			});
 		},
@@ -103,6 +106,7 @@ e.playClips = {{
 					\defer, defer,
 					\iphase, iphase[index],
 					\panSpeed, panSpeed,
+					\vol, e.fliessendVolume
 				]);
 			});
 	});
