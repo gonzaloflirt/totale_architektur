@@ -5,7 +5,7 @@ e = ();
 
 e.numSpeakers = 22;
 e.numEinheiten = 15;
-e.sumsVolume = -24;
+e.blockigVolume = -3;
 e.emptyBucketChance = [0.05, 0.95];
 e.emptyBucketWaitRange = [0.01, 1.5];
 e.dataDir = Document.current.dir +/+ 'data';
@@ -78,21 +78,33 @@ e.emptyBucket = {{
 
 e.playClips = {{
 	|buffers, duration|
-	var form = e.form.next;
-	var channel = round(Array.interpolation(buffers.size(), 0, e.numSpeakers - 1));
-	var iphase = Array.interpolation(buffers.size(), 0, 2 - (2 / buffers.size())) + rrand(0, 2);
-	var panSpeed = duration.reciprocal;
-	if (buffers.size == 1, { channel = [rrand(0, e.numSpeakers - 1)]; });
-	buffers.scramble.collect({
-		|b, i|
-		var defer = rrand(0, duration - b.duration());
-		Synth(form, [
-			\bufnum, b.bufnum,
-			\defer, defer,
-			\channel, channel[i],
-			\iphase, iphase[i],
-			\panSpeed, panSpeed
-		]);
+	buffers = buffers.scramble();
+	switch (e.form.next,
+		\blockig, {
+			var extend = (ceil(e.numSpeakers / buffers.size()) * buffers.size()).asInt;
+			var bufferIndex = (0..(buffers.size() -1)).wrapExtend(extend).scramble().foldExtend(e.numSpeakers.asInt).sort();
+			var defers = Array.fill(buffers.size(), { |i|   rrand(0, duration - buffers[i].duration()) });
+			bufferIndex.do({ |index, channel|
+				var buffer = buffers[index];
+				Synth(\blockig, [
+					\bufnum, buffer.bufnum,
+					\defer, defers[index],
+					\channel, channel,
+				]);
+			});
+		},
+		\fliessend, {
+			var iphase = Array.interpolation(buffers.size(), 0, 2 - (2 / buffers.size())) + rrand(0, 2);
+			var panSpeed = duration.reciprocal;
+			buffers.do({ |buffer, index|
+				var defer = rrand(0, duration - buffer.duration());
+				Synth(\fliessend, [
+					\bufnum, buffer.bufnum,
+					\defer, defer,
+					\iphase, iphase[index],
+					\panSpeed, panSpeed,
+				]);
+			});
 	});
 }};
 
@@ -132,10 +144,10 @@ e.playEinheit = {{
 s.waitForBoot{
 
 	SynthDef(\blockig, {
-		|bufnum, defer = 0, channel = 0, vol = 0, fade = 0.002|
+		|bufnum, defer = 0, channel = 0, numChannels = 1, vol = 0, fade = 0.002|
 		var env = EnvGen.kr(Env([0, 0, 1], [defer, 0]));
 		var sig = PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum), trigger: env - 0.5, doneAction: 2);
-		Out.ar(channel, vol.dbamp * sig * env);
+		Out.ar(channel, (vol.dbamp * sig * env));
 	}).add;
 
 	SynthDef(\fliessend, {
