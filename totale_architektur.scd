@@ -95,7 +95,7 @@ e.playClips = {{
 		},
 		\fliessend, {
 			var iphase = Array.interpolation(buffers.size(), 0, 2 - (2 / buffers.size())) + rrand(0, 2);
-			var panSpeed = duration.reciprocal;
+			var panSpeed = duration.reciprocal * [-1, 1].choose;
 			buffers.do({ |buffer, index|
 				var defer = rrand(0, duration - buffer.duration());
 				Synth(\fliessend, [
