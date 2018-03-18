@@ -179,8 +179,6 @@ s.waitForBoot{
 	e.form  = Pseq([\blockig, \fliessend], inf).asStream;
 	e.playSequence = Pwrand([e.emptyBucket, e.playEinheit], e.emptyBucketChance, inf).asStream;
 
-	Synth(\limiter);
-
 	Tdef(\main, { loop {
 		e.playSequence.next.value(e.einheit.next);
 	}}).play;
