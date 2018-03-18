@@ -45,9 +45,12 @@ def daily():
         name = os.path.join(dailiesDir, date())
         daily.export(name + '.wav', format = 'wav')
         daily.export(name + '.mp3', format = 'mp3', bitrate="128k")
-        database.writeDaily(date(), (name + '.wav'))
+        database.writeDaily(date(), name + '.wav')
         os.system(config.get('vereinheiter', 'dailiesSyncCmd'))
         print('new daily:', name + '.mp3')
+    else:
+        database.writeDaily(date(), '')
+        print('skip empty daily')
 
 def dailyJob():
     cur = database.readDaily(date())
