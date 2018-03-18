@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import configparser, datetime, os, pyaudio, sys, threading, termios, time, wave
-from pydub import AudioSegment
 from pythonosc import dispatcher, osc_server
 
 recording = False
@@ -18,7 +17,7 @@ class Recorder:
         sampleRate = config.getint('recorder', 'samplerate')
         frameSize = config.getint('recorder', 'framesize')
         deviceIndex = config.getint('recorder', 'deviceIndex')
-        maxDuration = config.getint('recorder', 'maxDuration') * 1000
+        maxDuration = int(sampleRate / frameSize * config.getint('recorder', 'maxDuration'))
         filename = str(self.einheit) + '_' + datetime.datetime.now().isoformat()
         print('recording {} ...'.format(filename))
         audio = pyaudio.PyAudio()
@@ -30,12 +29,13 @@ class Recorder:
             frames_per_buffer = frameSize,
             input_device_index = deviceIndex)
 
-        frames = AudioSegment.empty()
+        frames = []
         while self.recording and not self.canceled:
-            frames += AudioSegment(
-                stream.read(frameSize), sample_width=2, frame_rate = sampleRate, channels=1)
+            chunk = stream.read(frameSize)
+            frames.append(chunk)
             if len(frames) > maxDuration:
                 self.canceled = True
+
         stream.stop_stream()
         stream.close()
         audio.terminate()
@@ -46,9 +46,16 @@ class Recorder:
                 break
             time.sleep(1)
 
-        if not self.canceled and frames.duration_seconds > 0:
-            frames.export(os.path.join(dataDir, filename) + '.wav', format = 'wav')
-            print('wrote', filename, 'duration:', frames.duration_seconds, 'seconds')
+        frames = frames[2:]
+        duration = frameSize * len(frames) / sampleRate
+        if not self.canceled and duration > 0:
+            waveFile = wave.open(os.path.join(dataDir, filename) + '.wav', 'wb')
+            waveFile.setnchannels(numChannels)
+            waveFile.setsampwidth(audio.get_sample_size(pyaudio.paInt16))
+            waveFile.setframerate(sampleRate)
+            waveFile.writeframes(b''.join(frames))
+            waveFile.close()
+            print('wrote', filename, 'duration:', duration, 'seconds')
             syncTarget = config.get('recorder', 'rsyncTarget')
             os.system('rsync -avrz {}/*.wav {}'.format(dataDir, syncTarget))
         else:
