@@ -22,6 +22,7 @@ s.options.numBuffers = 2048;
 e.buffers = ();
 e.buffers.clips = ();
 e.buffers.sums = ();
+e.serverVolume = 0;
 
 e.readEinheit = {{ |einheit|
 	var data, clips, sums;
@@ -180,10 +181,11 @@ s.waitForBoot{
 	e.playSequence = Pwrand([e.emptyBucket, e.playEinheit], e.emptyBucketChance, inf).asStream;
 
 	Tdef(\main, { loop {
+		s.volume = e.serverVolume;
 		e.playSequence.next.value(e.einheit.next);
 	}}).play;
 
-	OSCdef(\volume, {|msg| s.volume = msg[1]; }, '/volume')
+	OSCdef(\volume, {|msg| e.serverVolume = msg[1]; }, '/volume')
 }
 )
 
